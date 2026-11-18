@@ -1,0 +1,2826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>π Recall</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: rgba(30, 41, 59, 0.78);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #4ade80;
+      --danger: #f87171;
+      --warn: #fbbf24;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      overflow-x: hidden;
+    }
+
+    #bg-shader {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 700px;
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 16px;
+      padding: 1.85rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.1rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .mode-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      display: none;
+    }
+
+    .mode-badge.visible {
+      display: inline-block;
+    }
+
+    .mode-badge.practice {
+      background: rgba(251, 191, 36, 0.14);
+      color: var(--warn);
+      border-color: rgba(251, 191, 36, 0.35);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .stats {
+      display: flex;
+      gap: 0.7rem;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--muted);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stats span strong {
+      color: var(--accent);
+      font-size: 1.02rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .drawer-toggles {
+      display: flex;
+      gap: 0.45rem;
+    }
+
+    .btn-drawer-toggle {
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 8px;
+      padding: 0.4rem 0.72rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .btn-drawer-toggle.active {
+      background: rgba(74, 222, 128, 0.16);
+      color: var(--success);
+      border-color: rgba(74, 222, 128, 0.4);
+    }
+
+    .btn-drawer-toggle.warn-active {
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--warn);
+      border-color: rgba(251, 191, 36, 0.4);
+    }
+
+    .btn-drawer-toggle .chevron {
+      display: inline-block;
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .btn-drawer-toggle.open .chevron {
+      transform: rotate(180deg);
+    }
+
+    .drawer {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transform: translateY(-6px);
+      margin-bottom: 0;
+      transition:
+        grid-template-rows 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.26s ease,
+        transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+        margin-bottom 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+    }
+
+    .drawer.open {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      transform: translateY(0);
+      margin-bottom: 1.15rem;
+      pointer-events: auto;
+    }
+
+    .drawer-inner {
+      overflow: hidden;
+    }
+
+    .panel {
+      background: rgba(11, 17, 32, 0.82);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      padding: 1rem 1.15rem;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .vibe-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .vibe-info strong {
+      color: var(--accent);
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-mini {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 7px;
+      padding: 0.34rem 0.65rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-mini:hover {
+      background: rgba(56, 189, 248, 0.25);
+    }
+
+    .btn-mini.on {
+      background: rgba(74, 222, 128, 0.18);
+      color: var(--success);
+      border-color: rgba(74, 222, 128, 0.4);
+    }
+
+    .btn-mini.off {
+      background: rgba(248, 113, 113, 0.15);
+      color: var(--danger);
+      border-color: rgba(248, 113, 113, 0.35);
+    }
+
+    .btn-mini.warn {
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--warn);
+      border-color: rgba(251, 191, 36, 0.35);
+    }
+
+    .sliders-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem 1.1rem;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.9rem 1.15rem;
+    }
+
+    @media (max-width: 540px) {
+      .sliders-grid,
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .setting-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.42rem;
+    }
+
+    .setting-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .setting-desc {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .inline-row {
+      display: flex;
+      gap: 0.45rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .mini-input {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #334155;
+      border-radius: 7px;
+      padding: 0.38rem 0.6rem;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 700;
+      width: 96px;
+      outline: none;
+    }
+
+    .mini-input:focus {
+      border-color: var(--accent);
+    }
+
+    .pill-group {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .chunk-pill {
+      background: rgba(30, 41, 59, 0.9);
+      color: var(--muted);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 0.28rem 0.55rem;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .chunk-pill.selected {
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--accent);
+      border-color: rgba(56, 189, 248, 0.5);
+    }
+
+    .milestones-section {
+      margin-top: 0.9rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(51, 65, 85, 0.6);
+    }
+
+    .milestone-chips {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-top: 0.45rem;
+    }
+
+    .milestone-chip {
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 0.22rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(74, 222, 128, 0.14);
+      color: var(--success);
+      border: 1px solid rgba(74, 222, 128, 0.35);
+    }
+
+    .milestone-chip.next {
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--muted);
+      border-color: rgba(148, 163, 184, 0.25);
+      border-style: dashed;
+    }
+
+    .music-import-section {
+      margin-top: 0.9rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(51, 65, 85, 0.6);
+    }
+
+    .track-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-top: 0.55rem;
+      max-height: 130px;
+      overflow-y: auto;
+    }
+
+    .track-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.78rem;
+    }
+
+    .track-item.playing {
+      border-color: rgba(74, 222, 128, 0.45);
+      background: rgba(74, 222, 128, 0.08);
+    }
+
+    .track-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .slider-label span:last-child {
+      color: var(--text);
+      font-family: monospace;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #1e293b;
+      border-radius: 999px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid #0f172a;
+    }
+
+    .display-box {
+      background: rgba(11, 17, 32, 0.85);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.25rem;
+      min-height: 120px;
+      max-height: 230px;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 1.48rem;
+      font-weight: 700;
+      line-height: 1.68;
+      margin-bottom: 1.15rem;
+      transition: border-color 0.2s;
+    }
+
+    .display-box::-webkit-scrollbar {
+      display: none;
+    }
+
+    .display-box.shake {
+      animation: shakeAnim 0.3s ease;
+      border-color: rgba(248, 113, 113, 0.65);
+    }
+
+    @keyframes shakeAnim {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-4px); }
+    }
+
+    .pi-block {
+      display: block;
+      content-visibility: auto;
+      contain-intrinsic-size: auto 76px;
+    }
+
+    .pi-block.unbroken {
+      word-break: break-all;
+      contain-intrinsic-size: auto 100px;
+    }
+
+    .display-flow-unbroken {
+      display: block;
+      word-break: break-all;
+    }
+
+    .prefix {
+      color: var(--accent);
+      font-weight: 800;
+      margin-right: 0.08em;
+    }
+
+    .cg {
+      display: inline-block;
+      margin-right: 0.48em;
+      white-space: nowrap;
+    }
+
+    .ci {
+      font-size: 0.54em;
+      color: #475569;
+      margin-right: 0.22em;
+      font-weight: 600;
+      user-select: none;
+      vertical-align: super;
+    }
+
+    .anchor-digit {
+      color: #64748b;
+    }
+
+    .typed {
+      color: var(--success);
+    }
+
+    .revealed {
+      color: var(--warn);
+    }
+
+    .chunk-slot {
+      display: inline-block;
+      color: rgba(148, 163, 184, 0.55);
+      margin: 0 0.08em;
+      line-height: 1.1;
+    }
+
+    .chunk-slot.active {
+      color: var(--accent);
+      animation: pulseSlot 1s ease-in-out infinite;
+    }
+
+    @keyframes pulseSlot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 9px;
+      height: 1.18em;
+      background: var(--accent);
+      vertical-align: middle;
+      margin-left: 2px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.6rem;
+      margin-bottom: 0.9rem;
+    }
+
+    input[type="text"]#digitInput {
+      flex: 1;
+      min-width: 0;
+      background: rgba(11, 17, 32, 0.85);
+      border: 2px solid #334155;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-size: 1.12rem;
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]#digitInput:focus {
+      border-color: var(--accent);
+    }
+
+    input[type="text"]#digitInput:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1.15rem;
+      font-size: 0.94rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s, background 0.15s;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-backspace {
+      background: rgba(148, 163, 184, 0.14);
+      color: var(--text);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      padding: 0.75rem 0.95rem;
+      font-size: 1.05rem;
+    }
+
+    .btn-backspace:hover:not(:disabled) {
+      background: rgba(148, 163, 184, 0.24);
+    }
+
+    .btn-giveup {
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--warn);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .btn-giveup:hover:not(:disabled) {
+      background: rgba(251, 191, 36, 0.25);
+    }
+
+    .action-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .action-row button {
+      flex: 1;
+    }
+
+    .btn-peek {
+      display: none;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .btn-peek.visible {
+      display: block;
+    }
+
+    .btn-peek:hover {
+      background: rgba(56, 189, 248, 0.25);
+    }
+
+    .btn-restart {
+      background: var(--accent);
+      color: #0f172a;
+    }
+
+    .btn-restart:hover {
+      opacity: 0.9;
+    }
+
+    .feedback {
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      margin-bottom: 1rem;
+      display: none;
+      line-height: 1.5;
+      font-size: 0.92rem;
+    }
+
+    .feedback.error {
+      display: block;
+      background: rgba(248, 113, 113, 0.15);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      color: #fecaca;
+    }
+
+    .feedback.giveup {
+      display: block;
+      background: rgba(251, 191, 36, 0.15);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      color: #fef08a;
+    }
+
+    .feedback.practice-warn {
+      display: block;
+      background: rgba(248, 113, 113, 0.13);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      color: #fecaca;
+    }
+
+    .highlight-digit {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.05rem 0.45rem;
+      border-radius: 6px;
+      font-family: monospace;
+      font-weight: 800;
+      font-size: 1.1em;
+      color: #fff;
+    }
+
+    .milestone-banner {
+      margin-top: 0.65rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .milestone-banner-title {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--success);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.35rem;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg-shader"></canvas>
+
+  <div class="container">
+    <header>
+      <div class="title-group">
+        <h1>π Recall</h1>
+        <span class="mode-badge practice" id="practiceBadge">Practice</span>
+        <span class="mode-badge" id="drillBadge">Drill #1</span>
+      </div>
+      <div class="header-right">
+        <div class="stats">
+          <span>Digits: <strong id="score">0</strong></span>
+          <span>Best: <strong id="best">0</strong></span>
+          <span>Time: <strong id="timer">0.0s</strong></span>
+          <span>WPM: <strong id="wpm">0</strong></span>
+        </div>
+        <div class="drawer-toggles">
+          <button class="btn-drawer-toggle" id="settingsDrawerBtn" title="Practice &amp; Display Settings">
+            <span>Settings</span>
+            <span class="chevron">&#9662;</span>
+          </button>
+          <button class="btn-drawer-toggle active" id="soundDrawerBtn" title="Sound Settings">
+            <span>Sound</span>
+            <span class="chevron">&#9662;</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Practice, Chunk Drill, Visual Chunking & Milestones Drawer -->
+    <div class="drawer" id="settingsDrawer">
+      <div class="drawer-inner">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="vibe-info">
+              Practice &amp; Recall Settings &bull; <strong id="nextMilestoneLabel">Next milestone: 1 digit</strong>
+            </div>
+            <div class="panel-actions">
+              <button class="btn-mini off" id="practiceToggleBtn">Practice Mode: Off</button>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="setting-block">
+              <div class="setting-title">
+                <span>Chunk Drill — Where to start</span>
+              </div>
+              <div class="inline-row">
+                <input type="number" class="mini-input" id="startAtInput" min="1" max="50000" value="1" />
+                <button class="btn-mini" id="applyStartAtBtn">Start Here</button>
+                <button class="btn-mini" id="resetStartAtBtn">Reset to 1</button>
+              </div>
+              <div class="setting-desc" id="startAtDesc">
+                Normal run starting from 3. (decimal #1)
+              </div>
+            </div>
+
+            <div class="setting-block">
+              <div class="setting-title">
+                <span>Visual Chunking</span>
+                <button class="btn-mini" id="chunkIndicesBtn">Indices: On</button>
+              </div>
+              <div class="pill-group" id="chunkPills">
+                <button class="chunk-pill" data-chunk="1">Off</button>
+                <button class="chunk-pill" data-chunk="2">2</button>
+                <button class="chunk-pill" data-chunk="3">3</button>
+                <button class="chunk-pill" data-chunk="4">4</button>
+                <button class="chunk-pill" data-chunk="5">5</button>
+                <button class="chunk-pill" data-chunk="6">6</button>
+                <button class="chunk-pill" data-chunk="8">8</button>
+                <button class="chunk-pill" data-chunk="10">10</button>
+              </div>
+              <div class="inline-row">
+                <span class="setting-desc">Custom:</span>
+                <input type="number" class="mini-input" id="customChunkInput" min="1" max="25" value="5" style="width: 68px;" />
+              </div>
+            </div>
+          </div>
+
+          <div class="milestones-section">
+            <div class="setting-title">
+              <span>Unlocked Milestones (Saved Locally &amp; Awarded Post-Run)</span>
+              <span class="setting-desc" id="milestoneCountText">0 unlocked</span>
+            </div>
+            <div class="milestone-chips" id="milestoneChips"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sound & Imported Audio Drawer -->
+    <div class="drawer" id="soundDrawer">
+      <div class="drawer-inner">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="vibe-info" id="audioStatusText">
+              Track: <strong id="vibeName">Midnight Tape</strong> &bull; <strong id="bpmDisplay">74 BPM</strong>
+            </div>
+            <div class="panel-actions">
+              <button class="btn-mini" id="waveSyncBtn">Wave Sync: On</button>
+              <button class="btn-mini" id="rerollBtn">New Beat</button>
+              <button class="btn-mini on" id="lofiToggleBtn">Lo-Fi: On</button>
+            </div>
+          </div>
+
+          <div class="sliders-grid">
+            <div class="slider-row">
+              <div class="slider-label"><span>Master Volume</span><span id="valMaster">75%</span></div>
+              <input type="range" id="volMaster" min="0" max="100" value="75" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Warm Chords &amp; Keys</span><span id="valChords">70%</span></div>
+              <input type="range" id="volChords" min="0" max="100" value="70" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Lo-Fi Drums &amp; Sub</span><span id="valDrums">65%</span></div>
+              <input type="range" id="volDrums" min="0" max="100" value="65" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Vinyl Crackle</span><span id="valCrackle">40%</span></div>
+              <input type="range" id="volCrackle" min="0" max="100" value="40" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Key Chimes (SFX)</span><span id="valSfx">55%</span></div>
+              <input type="range" id="volSfx" min="0" max="100" value="55" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Tape Low-Pass</span><span id="valFilter">1750 Hz</span></div>
+              <input type="range" id="filterCutoff" min="450" max="4200" value="1750" />
+            </div>
+          </div>
+
+          <div class="music-import-section">
+            <div class="setting-title">
+              <span>Offline Music Import (Device Audio)</span>
+              <div class="panel-actions">
+                <input type="file" id="songImportInput" accept="audio/*" multiple hidden />
+                <button class="btn-mini" id="importSongBtn">+ Import Song(s)</button>
+                <button class="btn-mini" id="customLoopBtn">Loop: On</button>
+                <button class="btn-mini" id="useLofiBtn" style="display:none;">Use Built-in Lo-Fi</button>
+              </div>
+            </div>
+            <div class="setting-desc" id="customAudioHint">
+              Import MP3, WAV, OGG, or M4A files directly from your device. Stored offline in your browser.
+            </div>
+            <div class="track-list" id="trackList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="display-box" id="displayBox">
+      <div id="blocksEl"></div>
+      <div id="activeTailEl"></div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="controls">
+      <input
+        type="text"
+        id="digitInput"
+        inputmode="numeric"
+        autocomplete="off"
+        placeholder="Type here"
+        autofocus
+      />
+      <button class="btn-backspace" id="backspaceBtn" title="Backspace (or press Backspace key)">&#9003;</button>
+      <button class="btn-giveup" id="dontKnowBtn">Don't Know</button>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-peek" id="showNextBtn">Show Next 5 Digits</button>
+      <button class="btn-restart" id="restartBtn">Restart Game</button>
+    </div>
+  </div>
+
+  <script>
+    const MAX_DRILL_START = 50000;
+    const STORAGE_KEY = 'pi_recall_state_v5';
+    const PREV_STORAGE_KEY = 'pi_recall_state_v4';
+
+    function loadSavedData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw) || {};
+        const prevRaw = localStorage.getItem(PREV_STORAGE_KEY);
+        if (prevRaw) return JSON.parse(prevRaw) || {};
+        return {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    const savedData = loadSavedData();
+
+    // --- Audio Settings & Music Sync State ---
+    const savedAudio = savedData.audio || {};
+    const audioSettings = {
+      lofiEnabled: savedAudio.lofiEnabled !== undefined ? savedAudio.lofiEnabled : true,
+      waveSync: savedAudio.waveSync !== undefined ? savedAudio.waveSync : true,
+      audioSource: savedAudio.audioSource || 'lofi',
+      activeTrackId: savedAudio.activeTrackId || null,
+      customLoop: savedAudio.customLoop !== undefined ? savedAudio.customLoop : true,
+      drawerOpen: savedAudio.drawerOpen !== undefined ? savedAudio.drawerOpen : false,
+      master: savedAudio.master !== undefined ? savedAudio.master : 0.75,
+      chords: savedAudio.chords !== undefined ? savedAudio.chords : 0.70,
+      drums: savedAudio.drums !== undefined ? savedAudio.drums : 0.65,
+      crackle: savedAudio.crackle !== undefined ? savedAudio.crackle : 0.40,
+      sfx: savedAudio.sfx !== undefined ? savedAudio.sfx : 0.55,
+      cutoff: savedAudio.cutoff !== undefined ? savedAudio.cutoff : 1750
+    };
+
+    // --- Non-Sound Game Settings ---
+    const savedSettings = savedData.settings || {};
+    const gameSettings = {
+      practiceMode: savedSettings.practiceMode !== undefined ? savedSettings.practiceMode : false,
+      startAt: Math.max(1, Math.min(MAX_DRILL_START, Number(savedSettings.startAt || 1))),
+      chunkSize: Math.max(1, Math.min(25, Number(savedSettings.chunkSize !== undefined ? savedSettings.chunkSize : 5))),
+      showIndices: savedSettings.showIndices !== undefined ? savedSettings.showIndices : true,
+      drawerOpen: savedSettings.drawerOpen !== undefined ? savedSettings.drawerOpen : false
+    };
+
+    // --- Procedural Milestones ---
+    function generateMilestonesUpTo(limit) {
+      const list = [];
+      let decade = 0;
+      while (decade <= 10) {
+        const pow10 = Math.pow(10, decade);
+        const candidates = [pow10, Math.floor(Math.PI * pow10), 5 * pow10];
+        for (let i = 0; i < candidates.length; i++) {
+          const val = candidates[i];
+          if (val > limit) return list;
+          if (list.length === 0 || list[list.length - 1] !== val) {
+            list.push(val);
+          }
+        }
+        decade++;
+      }
+      return list;
+    }
+
+    function getNextProceduralMilestone(currentVal) {
+      let decade = 0;
+      while (decade <= 10) {
+        const pow10 = Math.pow(10, decade);
+        const candidates = [pow10, Math.floor(Math.PI * pow10), 5 * pow10];
+        for (let i = 0; i < candidates.length; i++) {
+          if (candidates[i] > currentVal) return candidates[i];
+        }
+        decade++;
+      }
+      return currentVal + 1000;
+    }
+
+    function formatMilestoneLabel(val) {
+      if (val === 1) return '1 Digit';
+      const decade = Math.floor(Math.log10(val));
+      const pow10 = Math.pow(10, decade);
+      if (val === Math.floor(Math.PI * pow10)) {
+        const mult = pow10 === 1 ? 'π' : (pow10.toLocaleString() + 'π');
+        return val.toLocaleString() + ' Digits (' + mult + ')';
+      }
+      return val.toLocaleString() + ' Digits';
+    }
+
+    let unlockedMilestones = Array.isArray(savedData.unlockedMilestones)
+      ? savedData.unlockedMilestones.slice().sort(function(a, b) { return a - b; })
+      : [];
+
+    // --- Fast Binary-Splitting Chudnovsky Pi Engine (BigInt, O(N log^2 N)) ---
+    const C3_OVER_24 = 10939058860032000n; // 640320^3 / 24
+
+    function bigIntSqrt(n) {
+      if (n < 2n) return n;
+      let x = 1n << BigInt(n.toString(16).length * 2);
+      let y = (x + n / x) >> 1n;
+      while (y < x) {
+        x = y;
+        y = (x + n / x) >> 1n;
+      }
+      return x;
+    }
+
+    function chudnovskyBS(a, b) {
+      if (b - a === 1) {
+        if (a === 0) {
+          return { P: 1n, Q: 1n, T: 13591409n };
+        }
+        const ka = BigInt(a);
+        const P = (6n * ka - 5n) * (2n * ka - 1n) * (6n * ka - 1n);
+        const Q = ka * ka * ka * C3_OVER_24;
+        let T = P * (13591409n + 545140134n * ka);
+        if ((a & 1) === 1) T = -T;
+        return { P: P, Q: Q, T: T };
+      }
+      const m = (a + b) >> 1;
+      const left = chudnovskyBS(a, m);
+      const right = chudnovskyBS(m, b);
+      return {
+        P: left.P * right.P,
+        Q: left.Q * right.Q,
+        T: left.T * right.Q + left.P * right.T
+      };
+    }
+
+    function computePiString(numDecimalDigits) {
+      const guard = 32;
+      const precisionDigits = numDecimalDigits + guard;
+      const terms = Math.ceil(precisionDigits / 14.181647462725477) + 2;
+      const bs = chudnovskyBS(0, terms);
+      const scale = 10n ** BigInt(precisionDigits);
+      const sqrt10005 = bigIntSqrt(10005n * scale * scale);
+      const piScaled = (bs.Q * 426880n * sqrt10005) / bs.T;
+      return piScaled.toString().slice(0, 1 + numDecimalDigits);
+    }
+
+    let piStr = '3';
+
+    function ensurePiDigits(targetIndex) {
+      if (piStr.length > targetIndex) return;
+      const nextCount = Math.max(500, targetIndex + 500, Math.floor(targetIndex * 1.25));
+      piStr = computePiString(nextCount);
+    }
+
+    function getPiDigit(decimalPos) {
+      ensurePiDigits(decimalPos);
+      return piStr.charCodeAt(decimalPos) - 48;
+    }
+
+    // --- Reactive WebGL Wave Shader + Unified Animation/Timer Loop ---
+    let shaderState = 0;
+    let greenPulse = 0.0;
+    let errorPulse = 0.0;
+    const waveSeed = [Math.random(), Math.random(), Math.random(), Math.random()];
+
+    const mouseState = { x: 0.0, y: 0.0, holding: false, holdMix: 0.0 };
+
+    let musicAnalyser = null;
+    let freqData = null;
+    let smoothedBass = 0.0;
+    let smoothedMid = 0.0;
+
+    // Timer state (merged into single rAF loop)
+    let elapsedMs = 0;
+    let timerRunning = false;
+    let lastTimerNow = null;
+    let lastShownTimerStr = '';
+    let lastShownWpmStr = '';
+
+    // Audio / custom audio references used inside loop
+    let audioCtx = null;
+    let customAudioEl = new Audio();
+    customAudioEl.preload = 'auto';
+
+    (function() {
+      const canvas = document.getElementById('bg-shader');
+      const gl = canvas.getContext('webgl');
+      if (!gl) return;
+
+      const vs = [
+        'attribute vec2 a_pos;',
+        'void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }'
+      ].join('\n');
+
+      const fs = [
+        'precision highp float;',
+        'uniform vec2 u_res;',
+        'uniform float u_time;',
+        'uniform float u_rawTime;',
+        'uniform float u_pulse;',
+        'uniform float u_errorPulse;',
+        'uniform vec3 u_tint;',
+        'uniform vec4 u_seed;',
+        'uniform vec2 u_mouse;',
+        'uniform float u_mouseHold;',
+        'uniform float u_musicBass;',
+        'uniform float u_musicMid;',
+        'void main() {',
+        '  vec2 uv = gl_FragCoord.xy / u_res.xy;',
+        '  vec2 p = uv * 2.0 - 1.0;',
+        '  p.x *= u_res.x / u_res.y;',
+        '  vec2 toPixel = p - u_mouse;',
+        '  float mDist = length(toPixel);',
+        '  vec2 dir = mDist > 0.0005 ? toPixel / mDist : vec2(0.0, 1.0);',
+        '  float push = u_mouseHold * 0.65 * exp(-mDist * 1.3);',
+        '  float warpedR = max(0.0, mDist - push);',
+        '  vec2 sampleP = u_mouse + dir * warpedR;',
+        '  float mouseEyeFade = 1.0 - u_mouseHold * 0.78 * smoothstep(0.4, 0.0, warpedR);',
+        '  float holdRipple = sin(mDist * 11.0 - u_rawTime * 7.5) * exp(-mDist * 1.55) * u_mouseHold * 0.28;',
+        '  float dist = length(sampleP);',
+        '  float ang = u_seed.x * 6.2831853;',
+        '  float ca = cos(ang);',
+        '  float sa = sin(ang);',
+        '  vec2 rp = mat2(ca, -sa, sa, ca) * sampleP;',
+        '  float freq1 = 1.6 + u_seed.y * 2.1;',
+        '  float freq2 = 1.7 + u_seed.z * 2.2;',
+        '  float phase = u_seed.w * 6.2831853;',
+        '  float ripple = sin(dist * 9.0 - u_rawTime * 6.0) * (u_pulse * 0.14 + u_musicBass * 0.16) + holdRipple;',
+        '  float t = u_time * (0.38 + u_seed.y * 0.22);',
+        '  float w1 = sin(rp.x * freq1 + t + phase + cos(rp.y * (freq2 * 0.85) - t * 0.8 + phase) + ripple);',
+        '  float w2 = cos(rp.y * freq2 - t * 1.05 - phase + sin(rp.x * (freq1 * 0.8) + t) - ripple);',
+        '  float wave = (w1 + w2) * 0.5;',
+        '  float ribbonThick = 0.11 + u_pulse * 0.05 + u_musicMid * 0.055;',
+        '  float ribbon1 = smoothstep(ribbonThick, 0.0, abs(wave - rp.y * 0.6));',
+        '  float ribbon2 = smoothstep(ribbonThick + 0.06, 0.0, abs(sin(rp.x * (freq1 * 0.65) - t * 0.9 + phase) * 0.45 - rp.y));',
+        '  float glow = smoothstep(0.72 + u_musicBass * 0.18, 0.0, abs(wave - rp.y * 0.5));',
+        '  vec3 base = vec3(0.05, 0.08, 0.15);',
+        '  vec3 greenColor = vec3(0.29, 0.87, 0.50);',
+        '  vec3 redColor = vec3(0.97, 0.44, 0.44);',
+        '  vec3 activeColor = mix(u_tint, greenColor, u_pulse);',
+        '  activeColor = mix(activeColor, redColor, u_errorPulse);',
+        '  float boost = 1.0 + u_pulse * 0.85 + u_errorPulse * 0.55 + u_musicBass * 0.95;',
+        '  vec3 waveLight = activeColor * glow * 0.25 * boost + activeColor * (ribbon1 * 0.48 + ribbon2 * 0.28) * boost;',
+        '  vec3 color = base + waveLight * mouseEyeFade;',
+        '  gl_FragColor = vec4(color, 1.0);',
+        '}'
+      ].join('\n');
+
+      function compile(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return s;
+      }
+
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+      const posLoc = gl.getAttribLocation(prog, 'a_pos');
+      gl.enableVertexAttribArray(posLoc);
+      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+      const resLoc = gl.getUniformLocation(prog, 'u_res');
+      const timeLoc = gl.getUniformLocation(prog, 'u_time');
+      const rawTimeLoc = gl.getUniformLocation(prog, 'u_rawTime');
+      const pulseLoc = gl.getUniformLocation(prog, 'u_pulse');
+      const errPulseLoc = gl.getUniformLocation(prog, 'u_errorPulse');
+      const tintLoc = gl.getUniformLocation(prog, 'u_tint');
+      const seedLoc = gl.getUniformLocation(prog, 'u_seed');
+      const mouseLoc = gl.getUniformLocation(prog, 'u_mouse');
+      const mouseHoldLoc = gl.getUniformLocation(prog, 'u_mouseHold');
+      const musicBassLoc = gl.getUniformLocation(prog, 'u_musicBass');
+      const musicMidLoc = gl.getUniformLocation(prog, 'u_musicMid');
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      function updateMouseCoords(e) {
+        const w = window.innerWidth || 1;
+        const h = window.innerHeight || 1;
+        const aspect = w / h;
+        mouseState.x = ((e.clientX / w) * 2.0 - 1.0) * aspect;
+        mouseState.y = (1.0 - e.clientY / h) * 2.0 - 1.0;
+      }
+
+      window.addEventListener('pointerdown', function(e) {
+        if (e.target && e.target.closest('input, button, label')) return;
+        updateMouseCoords(e);
+        mouseState.holding = true;
+      });
+      window.addEventListener('pointermove', function(e) {
+        if (mouseState.holding) updateMouseCoords(e);
+      });
+      window.addEventListener('pointerup', function() { mouseState.holding = false; });
+      window.addEventListener('pointercancel', function() { mouseState.holding = false; });
+      window.addEventListener('blur', function() { mouseState.holding = false; });
+
+      const curTint = [0.22, 0.74, 0.97];
+      const targetTints = [
+        [0.22, 0.74, 0.97],
+        [0.97, 0.44, 0.44],
+        [0.98, 0.75, 0.14]
+      ];
+
+      let lastRenderTime = performance.now();
+      let waveClock = 0.0;
+
+      function render(now) {
+        const dt = Math.min(0.1, Math.max(0.0, (now - lastRenderTime) * 0.001));
+        lastRenderTime = now;
+
+        // Tick run timer in unified rAF loop (only touches DOM when text changes)
+        if (timerRunning && !gameOver) {
+          if (lastTimerNow !== null) {
+            elapsedMs += (now - lastTimerNow);
+            updateTimerAndWpmOnly();
+          }
+          lastTimerNow = now;
+        } else {
+          lastTimerNow = null;
+        }
+
+        const target = targetTints[shaderState];
+        for (let i = 0; i < 3; i++) {
+          curTint[i] += (target[i] - curTint[i]) * 0.08;
+        }
+
+        greenPulse *= 0.92;
+        errorPulse *= 0.90;
+        const targetHold = mouseState.holding ? 1.0 : 0.0;
+        mouseState.holdMix += (targetHold - mouseState.holdMix) * (mouseState.holding ? 0.14 : 0.08);
+
+        const musicActive = (audioSettings.audioSource === 'lofi' && audioSettings.lofiEnabled) ||
+          (audioSettings.audioSource === 'custom' && !customAudioEl.paused);
+
+        if (audioSettings.waveSync && musicActive && musicAnalyser && freqData && audioCtx && audioCtx.state === 'running') {
+          musicAnalyser.getByteFrequencyData(freqData);
+          let lowSum = 0;
+          let midSum = 0;
+          const lowEnd = Math.min(5, freqData.length);
+          const midEnd = Math.min(20, freqData.length);
+          for (let i = 0; i < lowEnd; i++) lowSum += freqData[i];
+          for (let i = lowEnd; i < midEnd; i++) midSum += freqData[i];
+          const rawBass = lowSum / (lowEnd * 255);
+          const rawMid = midSum / (Math.max(1, midEnd - lowEnd) * 255);
+
+          smoothedBass += (rawBass - smoothedBass) * 0.28;
+          smoothedMid += (rawMid - smoothedMid) * 0.22;
+        } else {
+          smoothedBass *= 0.9;
+          smoothedMid *= 0.9;
+        }
+
+        waveClock += dt * (1.0 + smoothedBass * 3.1 + smoothedMid * 1.4);
+
+        gl.uniform2f(resLoc, canvas.width, canvas.height);
+        gl.uniform1f(timeLoc, waveClock);
+        gl.uniform1f(rawTimeLoc, now * 0.001);
+        gl.uniform1f(pulseLoc, greenPulse);
+        gl.uniform1f(errPulseLoc, errorPulse);
+        gl.uniform3f(tintLoc, curTint[0], curTint[1], curTint[2]);
+        gl.uniform4f(seedLoc, waveSeed[0], waveSeed[1], waveSeed[2], waveSeed[3]);
+        gl.uniform2f(mouseLoc, mouseState.x, mouseState.y);
+        gl.uniform1f(mouseHoldLoc, mouseState.holdMix);
+        gl.uniform1f(musicBassLoc, smoothedBass);
+        gl.uniform1f(musicMidLoc, smoothedMid);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        requestAnimationFrame(render);
+      }
+      requestAnimationFrame(render);
+    })();
+
+    // --- Offline Audio Storage (IndexedDB with In-Memory Fallback) ---
+    const IDB_NAME = 'pi_recall_audio_db';
+    const IDB_STORE = 'tracks';
+    let importedTracks = [];
+    let customAudioPausedByUser = false;
+
+    function openAudioDB() {
+      return new Promise(function(resolve, reject) {
+        if (!window.indexedDB) {
+          reject(new Error('IndexedDB unavailable'));
+          return;
+        }
+        try {
+          const req = indexedDB.open(IDB_NAME, 1);
+          req.onupgradeneeded = function(e) {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(IDB_STORE)) {
+              db.createObjectStore(IDB_STORE, { keyPath: 'id' });
+            }
+          };
+          req.onsuccess = function(e) { resolve(e.target.result); };
+          req.onerror = function() { reject(req.error); };
+        } catch (err) {
+          reject(err);
+        }
+      });
+    }
+
+    async function saveTrackToDB(trackRecord) {
+      try {
+        const db = await openAudioDB();
+        return await new Promise(function(resolve) {
+          const tx = db.transaction(IDB_STORE, 'readwrite');
+          tx.objectStore(IDB_STORE).put(trackRecord);
+          tx.oncomplete = function() { resolve(true); };
+          tx.onerror = function() { resolve(false); };
+        });
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function deleteTrackFromDB(id) {
+      try {
+        const db = await openAudioDB();
+        return await new Promise(function(resolve) {
+          const tx = db.transaction(IDB_STORE, 'readwrite');
+          tx.objectStore(IDB_STORE).delete(id);
+          tx.oncomplete = function() { resolve(true); };
+          tx.onerror = function() { resolve(false); };
+        });
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function loadTracksFromDB() {
+      try {
+        const db = await openAudioDB();
+        const records = await new Promise(function(resolve) {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const req = tx.objectStore(IDB_STORE).getAll();
+          req.onsuccess = function() { resolve(req.result || []); };
+          req.onerror = function() { resolve([]); };
+        });
+        importedTracks = records.map(function(rec) {
+          return {
+            id: rec.id,
+            name: rec.name,
+            type: rec.type,
+            blob: rec.blob,
+            url: URL.createObjectURL(rec.blob)
+          };
+        });
+        if (audioSettings.audioSource === 'custom' && importedTracks.length === 0) {
+          audioSettings.audioSource = 'lofi';
+          audioSettings.activeTrackId = null;
+        }
+        renderTrackList();
+        syncSoundUI();
+      } catch (e) {
+        renderTrackList();
+      }
+    }
+
+    // --- Procedural Lo-Fi + Custom Audio Web Audio Engine ---
+    let masterGain, musicMixGain, lofiBus, customTrackGain, chordGain, drumGain, crackleGain, sfxGain, tapeFilter;
+    let customSourceNode = null;
+    let stepTimer = null;
+    let stepIndex = 0;
+
+    const vibes = [
+      {
+        name: 'Kyoto Rain',
+        chords: [
+          [53, 57, 60, 64, 67],
+          [52, 55, 59, 62, 67],
+          [50, 53, 57, 60, 64],
+          [48, 55, 59, 62, 64]
+        ]
+      },
+      {
+        name: 'Late Study',
+        chords: [
+          [50, 57, 60, 64, 67],
+          [55, 59, 62, 65, 69],
+          [48, 55, 59, 62, 67],
+          [45, 52, 55, 60, 64]
+        ]
+      },
+      {
+        name: 'Velvet Tape',
+        chords: [
+          [57, 60, 64, 67, 71],
+          [53, 57, 60, 64, 69],
+          [50, 53, 57, 60, 65],
+          [52, 56, 59, 62, 68]
+        ]
+      },
+      {
+        name: 'Neon Rooftop',
+        chords: [
+          [48, 55, 59, 62, 67],
+          [52, 55, 59, 62, 66],
+          [57, 60, 64, 67, 71],
+          [55, 60, 62, 65, 69]
+        ]
+      },
+      {
+        name: 'Subway Window',
+        chords: [
+          [45, 52, 55, 59, 64],
+          [48, 55, 59, 62, 67],
+          [53, 57, 60, 64, 69],
+          [52, 55, 59, 62, 67]
+        ]
+      },
+      {
+        name: '3AM Coffee',
+        chords: [
+          [50, 53, 57, 60, 64],
+          [47, 53, 56, 59, 62],
+          [48, 52, 55, 59, 62],
+          [45, 52, 55, 58, 64]
+        ]
+      }
+    ];
+
+    const drumGrooves = [
+      { name: 'Lazy Boom-Bap', kicks: [0, 7, 10], snares: [4, 12], ghosts: [15], hatEvery: 2, swing: 0.032 },
+      { name: 'Syncopated', kicks: [0, 3, 10, 13], snares: [4, 12], ghosts: [9, 15], hatEvery: 2, swing: 0.028 },
+      { name: 'Half-Time', kicks: [0, 6, 11], snares: [8], ghosts: [4, 14], hatEvery: 2, swing: 0.038 },
+      { name: 'Bossa Shuffle', kicks: [0, 3, 6, 8, 11, 14], snares: [4, 12], ghosts: [7, 15], hatEvery: 1, swing: 0.022 },
+      { name: 'Broken Beat', kicks: [0, 5, 11], snares: [4, 13], ghosts: [2, 10], hatEvery: 2, swing: 0.035 },
+      { name: 'Minimal Chill', kicks: [0, 10], snares: [4, 12], ghosts: [14], hatEvery: 4, swing: 0.025 }
+    ];
+
+    let currentVibe = vibes[0];
+    let currentGroove = drumGrooves[0];
+    let currentBpm = 74;
+    let pitchShift = 0;
+    let chordArpStyle = 0;
+    let useSubBass = true;
+    let melodyDensity = 0.45;
+    let chordWaveType = 'triangle';
+
+    function randomizeVibe() {
+      currentVibe = vibes[Math.floor(Math.random() * vibes.length)];
+      currentGroove = drumGrooves[Math.floor(Math.random() * drumGrooves.length)];
+      currentBpm = 62 + Math.floor(Math.random() * 26);
+      pitchShift = Math.floor(Math.random() * 9) - 4;
+      chordArpStyle = Math.floor(Math.random() * 3);
+      useSubBass = Math.random() > 0.25;
+      melodyDensity = 0.25 + Math.random() * 0.55;
+      chordWaveType = Math.random() > 0.45 ? 'triangle' : 'sine';
+
+      syncSoundStatusText();
+      if (stepTimer) {
+        restartSequencer();
+      }
+    }
+
+    function midiToFreq(m) {
+      return 440 * Math.pow(2, (m - 69) / 12);
+    }
+
+    function initAudio() {
+      if (audioCtx) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        return;
+      }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      audioCtx = new AC();
+
+      masterGain = audioCtx.createGain();
+      musicMixGain = audioCtx.createGain();
+      lofiBus = audioCtx.createGain();
+      customTrackGain = audioCtx.createGain();
+      chordGain = audioCtx.createGain();
+      drumGain = audioCtx.createGain();
+      crackleGain = audioCtx.createGain();
+      sfxGain = audioCtx.createGain();
+
+      musicAnalyser = audioCtx.createAnalyser();
+      musicAnalyser.fftSize = 128;
+      musicAnalyser.smoothingTimeConstant = 0.72;
+      freqData = new Uint8Array(musicAnalyser.frequencyBinCount);
+
+      tapeFilter = audioCtx.createBiquadFilter();
+      tapeFilter.type = 'lowpass';
+      tapeFilter.Q.value = 0.9;
+
+      chordGain.connect(tapeFilter);
+      drumGain.connect(tapeFilter);
+      crackleGain.connect(tapeFilter);
+      tapeFilter.connect(lofiBus);
+
+      lofiBus.connect(musicMixGain);
+      customTrackGain.connect(musicMixGain);
+
+      musicMixGain.connect(musicAnalyser);
+      musicMixGain.connect(masterGain);
+
+      sfxGain.connect(masterGain);
+      masterGain.connect(audioCtx.destination);
+
+      try {
+        customSourceNode = audioCtx.createMediaElementSource(customAudioEl);
+        customSourceNode.connect(customTrackGain);
+      } catch (e) {}
+
+      const bufSize = audioCtx.sampleRate * 3;
+      const noiseBuf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) {
+        const r = Math.random();
+        if (r > 0.9985) {
+          data[i] = (Math.random() * 2 - 1) * 0.95;
+        } else if (r > 0.992) {
+          data[i] = (Math.random() * 2 - 1) * 0.35;
+        } else {
+          data[i] = (Math.random() * 2 - 1) * 0.025;
+        }
+      }
+      const crackleSrc = audioCtx.createBufferSource();
+      crackleSrc.buffer = noiseBuf;
+      crackleSrc.loop = true;
+
+      const hp = audioCtx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 950;
+
+      crackleSrc.connect(hp);
+      hp.connect(crackleGain);
+      crackleSrc.start();
+
+      applyAudioSettings();
+      restartSequencer();
+
+      if (audioSettings.audioSource === 'custom' && audioSettings.activeTrackId && !customAudioPausedByUser) {
+        const track = importedTracks.find(function(t) { return t.id === audioSettings.activeTrackId; });
+        if (track && customAudioEl.paused) {
+          playTrackObject(track, false);
+        }
+      }
+    }
+
+    function isLofiActive() {
+      return audioSettings.lofiEnabled && audioSettings.audioSource === 'lofi';
+    }
+
+    function applyAudioSettings() {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      masterGain.gain.setTargetAtTime(audioSettings.master, now, 0.03);
+      lofiBus.gain.setTargetAtTime(isLofiActive() ? 1.0 : 0.0, now, 0.05);
+      customTrackGain.gain.setTargetAtTime(audioSettings.audioSource === 'custom' ? 0.95 : 0.0, now, 0.05);
+      chordGain.gain.setTargetAtTime(audioSettings.chords * 0.32, now, 0.03);
+      drumGain.gain.setTargetAtTime(audioSettings.drums * 0.55, now, 0.03);
+      crackleGain.gain.setTargetAtTime(audioSettings.crackle * 0.35, now, 0.03);
+      sfxGain.gain.setTargetAtTime(audioSettings.sfx * 0.4, now, 0.03);
+      tapeFilter.frequency.setTargetAtTime(audioSettings.cutoff, now, 0.05);
+    }
+
+    function triggerChord(notes, time, dur) {
+      if (!audioCtx || !isLofiActive()) return;
+      const voiced = notes.slice();
+      if (Math.random() > 0.5) voiced[0] += 12;
+      if (Math.random() > 0.65) voiced[voiced.length - 1] -= 12;
+
+      for (let i = 0; i < voiced.length; i++) {
+        const osc = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const env = audioCtx.createGain();
+
+        let stagger = 0;
+        if (chordArpStyle === 1) stagger = i * 0.035;
+        else if (chordArpStyle === 2) stagger = (voiced.length - 1 - i) * 0.03;
+        else stagger = Math.random() * 0.025;
+
+        const startT = time + stagger;
+        const freq = midiToFreq(voiced[i] + pitchShift);
+
+        osc.type = chordWaveType;
+        osc2.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startT);
+        osc2.frequency.setValueAtTime(freq * 1.0035, startT);
+
+        osc.frequency.linearRampToValueAtTime(freq * 0.996, startT + dur * 0.5);
+        osc.frequency.linearRampToValueAtTime(freq * 1.0015, startT + dur);
+
+        const noteGain = 0.22 / voiced.length;
+        env.gain.setValueAtTime(0.0001, startT);
+        env.gain.linearRampToValueAtTime(noteGain, startT + 0.07);
+        env.gain.exponentialRampToValueAtTime(0.0001, startT + dur);
+
+        osc.connect(env);
+        osc2.connect(env);
+        env.connect(chordGain);
+
+        osc.start(startT);
+        osc2.start(startT);
+        osc.stop(startT + dur + 0.05);
+        osc2.stop(startT + dur + 0.05);
+      }
+
+      if (useSubBass) {
+        const sub = audioCtx.createOscillator();
+        const subEnv = audioCtx.createGain();
+        sub.type = 'sine';
+        sub.frequency.setValueAtTime(midiToFreq(notes[0] - 12 + pitchShift), time);
+        subEnv.gain.setValueAtTime(0.0001, time);
+        subEnv.gain.linearRampToValueAtTime(0.16, time + 0.06);
+        subEnv.gain.exponentialRampToValueAtTime(0.0001, time + dur * 0.9);
+        sub.connect(subEnv);
+        subEnv.connect(drumGain);
+        sub.start(time);
+        sub.stop(time + dur);
+      }
+    }
+
+    function triggerPluck(note, time) {
+      if (!audioCtx || !isLofiActive()) return;
+      const osc = audioCtx.createOscillator();
+      const env = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(midiToFreq(note + 12 + pitchShift), time);
+      env.gain.setValueAtTime(0.0001, time);
+      env.gain.linearRampToValueAtTime(0.075, time + 0.015);
+      env.gain.exponentialRampToValueAtTime(0.0001, time + 0.42);
+      osc.connect(env);
+      env.connect(chordGain);
+      osc.start(time);
+      osc.stop(time + 0.45);
+    }
+
+    function triggerKick(time) {
+      if (!audioCtx || !isLofiActive()) return;
+      const osc = audioCtx.createOscillator();
+      const env = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(115, time);
+      osc.frequency.exponentialRampToValueAtTime(42, time + 0.14);
+
+      env.gain.setValueAtTime(0.55, time);
+      env.gain.exponentialRampToValueAtTime(0.001, time + 0.28);
+
+      osc.connect(env);
+      env.connect(drumGain);
+      osc.start(time);
+      osc.stop(time + 0.3);
+    }
+
+    function triggerSnare(time, isGhost) {
+      if (!audioCtx || !isLofiActive()) return;
+      const dur = isGhost ? 0.08 : 0.17;
+      const level = isGhost ? 0.11 : 0.28;
+      const len = Math.floor(audioCtx.sampleRate * dur);
+      const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.8);
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buf;
+
+      const bp = audioCtx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = isGhost ? 1450 : 1200;
+      bp.Q.value = 0.8;
+
+      const env = audioCtx.createGain();
+      env.gain.setValueAtTime(level, time);
+      env.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+      noise.connect(bp);
+      bp.connect(env);
+      env.connect(drumGain);
+      noise.start(time);
+    }
+
+    function triggerHat(time, openHat) {
+      if (!audioCtx || !isLofiActive()) return;
+      const dur = openHat ? 0.14 : 0.045;
+      const len = Math.floor(audioCtx.sampleRate * dur);
+      const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, openHat ? 1.5 : 2.5);
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buf;
+
+      const hp = audioCtx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 6000;
+
+      const env = audioCtx.createGain();
+      env.gain.setValueAtTime(openHat ? 0.11 : 0.08, time);
+      env.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+      noise.connect(hp);
+      hp.connect(env);
+      env.connect(drumGain);
+      noise.start(time);
+    }
+
+    function playDigitChime(digit, status) {
+      initAudio();
+      if (!audioCtx || audioSettings.sfx <= 0.01) return;
+      const now = audioCtx.currentTime;
+      const scale = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81];
+
+      const osc = audioCtx.createOscillator();
+      const env = audioCtx.createGain();
+
+      if (status === 'right') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(midiToFreq(scale[digit]), now);
+        env.gain.setValueAtTime(0.22, now);
+        env.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      } else if (status === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(165, now);
+        osc.frequency.linearRampToValueAtTime(110, now + 0.28);
+        env.gain.setValueAtTime(0.22, now);
+        env.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      } else if (status === 'back') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(210, now + 0.07);
+        env.gain.setValueAtTime(0.1, now);
+        env.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      } else {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(392, now);
+        osc.frequency.setValueAtTime(330, now + 0.09);
+        env.gain.setValueAtTime(0.2, now);
+        env.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      }
+
+      osc.connect(env);
+      env.connect(sfxGain);
+      osc.start(now);
+      osc.stop(now + 0.32);
+    }
+
+    function restartSequencer() {
+      if (stepTimer) clearInterval(stepTimer);
+      stepIndex = 0;
+      const sixteenthMs = (60 / currentBpm / 4) * 1000;
+
+      stepTimer = setInterval(function() {
+        if (!audioCtx || !isLofiActive() || audioCtx.state !== 'running') return;
+        const bar = Math.floor(stepIndex / 16) % currentVibe.chords.length;
+        const step = stepIndex % 16;
+        const swing = step % 2 === 1 ? currentGroove.swing : 0;
+        const t = audioCtx.currentTime + 0.02 + swing;
+        const barNotes = currentVibe.chords[bar];
+
+        if (step === 0) {
+          triggerChord(barNotes, t, (60 / currentBpm) * 3.8);
+        }
+        if (currentGroove.kicks.indexOf(step) !== -1) {
+          triggerKick(t);
+        } else if (step === 14 && Math.random() > 0.65) {
+          triggerKick(t);
+        }
+        if (currentGroove.snares.indexOf(step) !== -1) {
+          triggerSnare(t, false);
+        } else if (currentGroove.ghosts.indexOf(step) !== -1 && Math.random() > 0.35) {
+          triggerSnare(t, true);
+        }
+        if (step % currentGroove.hatEvery === 0) {
+          triggerHat(t, step === 14 && Math.random() > 0.7);
+        }
+        if ((step === 6 || step === 10 || step === 14) && Math.random() < melodyDensity) {
+          const pick = barNotes[Math.floor(Math.random() * barNotes.length)];
+          triggerPluck(pick, t);
+        }
+
+        stepIndex++;
+      }, sixteenthMs);
+    }
+
+    // --- Custom Offline Audio Playback Controls ---
+    function playTrackObject(track, resetToStart) {
+      initAudio();
+      audioSettings.audioSource = 'custom';
+      audioSettings.activeTrackId = track.id;
+      customAudioPausedByUser = false;
+
+      if (customAudioEl.src !== track.url) {
+        customAudioEl.src = track.url;
+      } else if (resetToStart) {
+        customAudioEl.currentTime = 0;
+      }
+      customAudioEl.loop = audioSettings.customLoop;
+      customAudioEl.play().catch(function() {});
+
+      applyAudioSettings();
+      syncSoundUI();
+      renderTrackList();
+      flushSaveState();
+    }
+
+    function pauseCustomTrack() {
+      customAudioEl.pause();
+      customAudioPausedByUser = true;
+      renderTrackList();
+      syncSoundUI();
+    }
+
+    function switchBackToLofi() {
+      initAudio();
+      customAudioEl.pause();
+      audioSettings.audioSource = 'lofi';
+      audioSettings.lofiEnabled = true;
+      applyAudioSettings();
+      syncSoundUI();
+      renderTrackList();
+      flushSaveState();
+    }
+
+    customAudioEl.addEventListener('ended', function() {
+      if (audioSettings.customLoop || importedTracks.length === 0) return;
+      const idx = importedTracks.findIndex(function(t) { return t.id === audioSettings.activeTrackId; });
+      const nextIdx = (idx + 1) % importedTracks.length;
+      playTrackObject(importedTracks[nextIdx], true);
+    });
+
+    // --- Drawers & Controls ---
+    const settingsDrawerBtn = document.getElementById('settingsDrawerBtn');
+    const settingsDrawer = document.getElementById('settingsDrawer');
+    const soundDrawerBtn = document.getElementById('soundDrawerBtn');
+    const soundDrawer = document.getElementById('soundDrawer');
+
+    const lofiToggleBtn = document.getElementById('lofiToggleBtn');
+    const rerollBtn = document.getElementById('rerollBtn');
+    const waveSyncBtn = document.getElementById('waveSyncBtn');
+    const songImportInput = document.getElementById('songImportInput');
+    const importSongBtn = document.getElementById('importSongBtn');
+    const customLoopBtn = document.getElementById('customLoopBtn');
+    const useLofiBtn = document.getElementById('useLofiBtn');
+    const trackListEl = document.getElementById('trackList');
+    const audioStatusText = document.getElementById('audioStatusText');
+
+    const practiceToggleBtn = document.getElementById('practiceToggleBtn');
+    const startAtInput = document.getElementById('startAtInput');
+    const applyStartAtBtn = document.getElementById('applyStartAtBtn');
+    const resetStartAtBtn = document.getElementById('resetStartAtBtn');
+    const startAtDesc = document.getElementById('startAtDesc');
+    const chunkPillsEl = document.getElementById('chunkPills');
+    const customChunkInput = document.getElementById('customChunkInput');
+    const chunkIndicesBtn = document.getElementById('chunkIndicesBtn');
+    const milestoneChipsEl = document.getElementById('milestoneChips');
+    const milestoneCountText = document.getElementById('milestoneCountText');
+    const nextMilestoneLabel = document.getElementById('nextMilestoneLabel');
+    const practiceBadge = document.getElementById('practiceBadge');
+    const drillBadge = document.getElementById('drillBadge');
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function syncSoundStatusText() {
+      if (audioSettings.audioSource === 'custom' && audioSettings.activeTrackId) {
+        const track = importedTracks.find(function(t) { return t.id === audioSettings.activeTrackId; });
+        const trackLabel = track ? track.name : 'Imported Track';
+        const stateTag = customAudioEl.paused ? ' (Paused)' : ' (Playing)';
+        audioStatusText.innerHTML = 'Device Track: <strong>' + escapeHtml(trackLabel) + '</strong>' + stateTag;
+      } else {
+        audioStatusText.innerHTML =
+          'Track: <strong id="vibeName">' + escapeHtml(currentVibe.name + ' (' + currentGroove.name + ')') +
+          '</strong> &bull; <strong id="bpmDisplay">' + currentBpm + ' BPM</strong>';
+      }
+    }
+
+    function syncSoundUI() {
+      if (audioSettings.lofiEnabled && audioSettings.audioSource === 'lofi') {
+        lofiToggleBtn.textContent = 'Lo-Fi: On';
+        lofiToggleBtn.className = 'btn-mini on';
+        soundDrawerBtn.classList.add('active');
+      } else if (audioSettings.audioSource === 'custom' && !customAudioEl.paused) {
+        lofiToggleBtn.textContent = 'Lo-Fi: Off';
+        lofiToggleBtn.className = 'btn-mini off';
+        soundDrawerBtn.classList.add('active');
+      } else {
+        lofiToggleBtn.textContent = audioSettings.lofiEnabled ? 'Lo-Fi: On' : 'Lo-Fi: Off';
+        lofiToggleBtn.className = 'btn-mini ' + (audioSettings.lofiEnabled ? 'on' : 'off');
+        soundDrawerBtn.classList.toggle('active', audioSettings.lofiEnabled);
+      }
+
+      waveSyncBtn.textContent = audioSettings.waveSync ? 'Wave Sync: On' : 'Wave Sync: Off';
+      waveSyncBtn.className = 'btn-mini ' + (audioSettings.waveSync ? 'on' : 'off');
+
+      customLoopBtn.textContent = audioSettings.customLoop ? 'Loop: On' : 'Loop: Off';
+      customLoopBtn.className = 'btn-mini ' + (audioSettings.customLoop ? 'on' : 'off');
+
+      useLofiBtn.style.display = audioSettings.audioSource === 'custom' ? 'inline-block' : 'none';
+
+      soundDrawer.classList.toggle('open', audioSettings.drawerOpen);
+      soundDrawerBtn.classList.toggle('open', audioSettings.drawerOpen);
+
+      document.getElementById('volMaster').value = Math.round(audioSettings.master * 100);
+      document.getElementById('valMaster').textContent = Math.round(audioSettings.master * 100) + '%';
+
+      document.getElementById('volChords').value = Math.round(audioSettings.chords * 100);
+      document.getElementById('valChords').textContent = Math.round(audioSettings.chords * 100) + '%';
+
+      document.getElementById('volDrums').value = Math.round(audioSettings.drums * 100);
+      document.getElementById('valDrums').textContent = Math.round(audioSettings.drums * 100) + '%';
+
+      document.getElementById('volCrackle').value = Math.round(audioSettings.crackle * 100);
+      document.getElementById('valCrackle').textContent = Math.round(audioSettings.crackle * 100) + '%';
+
+      document.getElementById('volSfx').value = Math.round(audioSettings.sfx * 100);
+      document.getElementById('valSfx').textContent = Math.round(audioSettings.sfx * 100) + '%';
+
+      document.getElementById('filterCutoff').value = Math.round(audioSettings.cutoff);
+      document.getElementById('valFilter').textContent = Math.round(audioSettings.cutoff) + ' Hz';
+
+      syncSoundStatusText();
+    }
+
+    function renderTrackList() {
+      trackListEl.innerHTML = '';
+      if (importedTracks.length === 0) return;
+
+      importedTracks.forEach(function(track) {
+        const isCurrent = audioSettings.audioSource === 'custom' && audioSettings.activeTrackId === track.id;
+        const isPlaying = isCurrent && !customAudioEl.paused;
+
+        const row = document.createElement('div');
+        row.className = 'track-item' + (isPlaying ? ' playing' : '');
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'track-name';
+        nameSpan.textContent = track.name;
+        nameSpan.title = track.name;
+
+        const playBtn = document.createElement('button');
+        playBtn.className = 'btn-mini ' + (isPlaying ? 'on' : '');
+        playBtn.textContent = isPlaying ? 'Pause' : 'Play';
+        playBtn.addEventListener('click', function() {
+          if (isPlaying) pauseCustomTrack();
+          else playTrackObject(track, !isCurrent);
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-mini off';
+        delBtn.textContent = '×';
+        delBtn.title = 'Remove track';
+        delBtn.addEventListener('click', async function() {
+          if (isCurrent) switchBackToLofi();
+          try { URL.revokeObjectURL(track.url); } catch (e) {}
+          importedTracks = importedTracks.filter(function(t) { return t.id !== track.id; });
+          await deleteTrackFromDB(track.id);
+          renderTrackList();
+          syncSoundUI();
+        });
+
+        row.appendChild(nameSpan);
+        row.appendChild(playBtn);
+        row.appendChild(delBtn);
+        trackListEl.appendChild(row);
+      });
+    }
+
+    function updateStartAtDesc(previewVal) {
+      const val = previewVal !== undefined ? previewVal : gameSettings.startAt;
+      if (previewVal !== undefined && previewVal !== runStartAt) {
+        startAtDesc.textContent = 'Press Start Here or Enter to jump to decimal #' + val.toLocaleString() + '.';
+        return;
+      }
+      if (gameSettings.startAt > 1) {
+        startAtDesc.textContent = 'Starts at decimal #' + gameSettings.startAt.toLocaleString() + ' (digits 1–' + (gameSettings.startAt - 1).toLocaleString() + ' shown before it).';
+      } else {
+        startAtDesc.textContent = 'Normal run starting from 3. (decimal #1)';
+      }
+    }
+
+    function syncSettingsUI() {
+      settingsDrawer.classList.toggle('open', gameSettings.drawerOpen);
+      settingsDrawerBtn.classList.toggle('open', gameSettings.drawerOpen);
+
+      practiceToggleBtn.textContent = gameSettings.practiceMode ? 'Practice Mode: On' : 'Practice Mode: Off';
+      practiceToggleBtn.className = 'btn-mini ' + (gameSettings.practiceMode ? 'warn' : 'off');
+      settingsDrawerBtn.classList.toggle('warn-active', gameSettings.practiceMode || gameSettings.startAt > 1);
+      practiceBadge.classList.toggle('visible', gameSettings.practiceMode);
+
+      startAtInput.value = gameSettings.startAt;
+      updateStartAtDesc();
+
+      if (gameSettings.startAt > 1) {
+        drillBadge.textContent = 'Drill #' + gameSettings.startAt.toLocaleString();
+        drillBadge.classList.add('visible');
+      } else {
+        drillBadge.classList.remove('visible');
+      }
+
+      const pills = chunkPillsEl.querySelectorAll('.chunk-pill');
+      pills.forEach(function(pill) {
+        pill.classList.toggle('selected', Number(pill.dataset.chunk) === gameSettings.chunkSize);
+      });
+      customChunkInput.value = gameSettings.chunkSize;
+
+      chunkIndicesBtn.textContent = gameSettings.showIndices ? 'Indices: On' : 'Indices: Off';
+      chunkIndicesBtn.className = 'btn-mini ' + (gameSettings.showIndices ? 'on' : 'off');
+
+      renderMilestonesPanel();
+    }
+
+    function renderMilestonesPanel() {
+      const highestUnlocked = unlockedMilestones.length > 0 ? unlockedMilestones[unlockedMilestones.length - 1] : 0;
+      const nextTarget = getNextProceduralMilestone(highestUnlocked);
+      nextMilestoneLabel.textContent = 'Next milestone: ' + formatMilestoneLabel(nextTarget);
+      milestoneCountText.textContent = unlockedMilestones.length + ' unlocked';
+
+      milestoneChipsEl.innerHTML = '';
+      unlockedMilestones.forEach(function(m) {
+        const chip = document.createElement('span');
+        chip.className = 'milestone-chip';
+        chip.textContent = formatMilestoneLabel(m);
+        milestoneChipsEl.appendChild(chip);
+      });
+
+      const nextChip = document.createElement('span');
+      nextChip.className = 'milestone-chip next';
+      nextChip.textContent = 'Next: ' + formatMilestoneLabel(nextTarget);
+      milestoneChipsEl.appendChild(nextChip);
+    }
+
+    settingsDrawerBtn.addEventListener('click', function() {
+      initAudio();
+      gameSettings.drawerOpen = !gameSettings.drawerOpen;
+      if (gameSettings.drawerOpen && audioSettings.drawerOpen) {
+        audioSettings.drawerOpen = false;
+        syncSoundUI();
+      }
+      syncSettingsUI();
+      flushSaveState();
+    });
+
+    soundDrawerBtn.addEventListener('click', function() {
+      initAudio();
+      audioSettings.drawerOpen = !audioSettings.drawerOpen;
+      if (audioSettings.drawerOpen && gameSettings.drawerOpen) {
+        gameSettings.drawerOpen = false;
+        syncSettingsUI();
+      }
+      syncSoundUI();
+      flushSaveState();
+    });
+
+    lofiToggleBtn.addEventListener('click', function() {
+      initAudio();
+      if (audioSettings.audioSource === 'custom') {
+        switchBackToLofi();
+        return;
+      }
+      audioSettings.lofiEnabled = !audioSettings.lofiEnabled;
+      syncSoundUI();
+      applyAudioSettings();
+      flushSaveState();
+    });
+
+    waveSyncBtn.addEventListener('click', function() {
+      initAudio();
+      audioSettings.waveSync = !audioSettings.waveSync;
+      syncSoundUI();
+      flushSaveState();
+    });
+
+    rerollBtn.addEventListener('click', function() {
+      initAudio();
+      if (audioSettings.audioSource === 'custom') switchBackToLofi();
+      randomizeVibe();
+    });
+
+    importSongBtn.addEventListener('click', function() {
+      initAudio();
+      songImportInput.click();
+    });
+
+    songImportInput.addEventListener('change', async function(e) {
+      initAudio();
+      const files = Array.from(e.target.files || []);
+      e.target.value = '';
+      if (files.length === 0) return;
+
+      let firstNewTrack = null;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const id = 'trk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        const track = {
+          id: id,
+          name: file.name,
+          type: file.type || 'audio/mpeg',
+          blob: file,
+          url: URL.createObjectURL(file)
+        };
+        importedTracks.push(track);
+        if (!firstNewTrack) firstNewTrack = track;
+        await saveTrackToDB({ id: track.id, name: track.name, type: track.type, blob: track.blob });
+      }
+
+      renderTrackList();
+      if (firstNewTrack) playTrackObject(firstNewTrack, true);
+    });
+
+    customLoopBtn.addEventListener('click', function() {
+      audioSettings.customLoop = !audioSettings.customLoop;
+      customAudioEl.loop = audioSettings.customLoop;
+      syncSoundUI();
+      flushSaveState();
+    });
+
+    useLofiBtn.addEventListener('click', switchBackToLofi);
+
+    function bindSlider(id, valId, key, unit, isFreq) {
+      const el = document.getElementById(id);
+      const valEl = document.getElementById(valId);
+      el.addEventListener('input', function() {
+        initAudio();
+        const v = Number(el.value);
+        audioSettings[key] = isFreq ? v : v / 100;
+        valEl.textContent = v + unit;
+        applyAudioSettings();
+        scheduleSaveState();
+      });
+    }
+
+    bindSlider('volMaster', 'valMaster', 'master', '%', false);
+    bindSlider('volChords', 'valChords', 'chords', '%', false);
+    bindSlider('volDrums', 'valDrums', 'drums', '%', false);
+    bindSlider('volCrackle', 'valCrackle', 'crackle', '%', false);
+    bindSlider('volSfx', 'valSfx', 'sfx', '%', false);
+    bindSlider('filterCutoff', 'valFilter', 'cutoff', ' Hz', true);
+
+    document.addEventListener('pointerdown', initAudio, { once: true });
+    document.addEventListener('keydown', initAudio, { once: true });
+
+    // --- Game State & Incremental DOM Renderer ---
+    const displayBox = document.getElementById('displayBox');
+    const blocksEl = document.getElementById('blocksEl');
+    const activeTailEl = document.getElementById('activeTailEl');
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const timerEl = document.getElementById('timer');
+    const wpmEl = document.getElementById('wpm');
+    const digitInput = document.getElementById('digitInput');
+    const backspaceBtn = document.getElementById('backspaceBtn');
+    const dontKnowBtn = document.getElementById('dontKnowBtn');
+    const showNextBtn = document.getElementById('showNextBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const feedbackEl = document.getElementById('feedback');
+
+    let runStartAt = gameSettings.startAt;
+    let typedDigits = '';
+    let revealedDigits = '';
+    let nextExpectedDigit = 1;
+    let count = 0;
+    let mistakes = 0;
+    let best = Number(savedData.best || localStorage.getItem('pi_best_score') || 0);
+    let gameOver = false;
+    let endReason = null;
+    let lastGuessedDigit = null;
+    let runNewMilestones = [];
+
+    let saveTimer = null;
+
+    bestEl.textContent = best;
+
+    function formatTime(ms) {
+      const totalSec = ms / 1000;
+      if (totalSec < 60) return totalSec.toFixed(1) + 's';
+      const mins = Math.floor(totalSec / 60);
+      const secs = (totalSec % 60).toFixed(1).padStart(4, '0');
+      return mins + ':' + secs;
+    }
+
+    function computeWpm(digits, ms) {
+      if (digits <= 0 || ms < 250) return 0;
+      const minutes = ms / 60000;
+      return Math.round((digits / 5) / minutes);
+    }
+
+    function updateTimerAndWpmOnly() {
+      const tStr = formatTime(elapsedMs);
+      if (tStr !== lastShownTimerStr) {
+        timerEl.textContent = tStr;
+        lastShownTimerStr = tStr;
+      }
+      const wStr = String(computeWpm(count, elapsedMs));
+      if (wStr !== lastShownWpmStr) {
+        wpmEl.textContent = wStr;
+        lastShownWpmStr = wStr;
+      }
+    }
+
+    function updateMetricsUI() {
+      scoreEl.textContent = count;
+      updateTimerAndWpmOnly();
+    }
+
+    function getBlockSize() {
+      const cs = gameSettings.chunkSize;
+      if (cs <= 1) return 400;
+      return Math.max(1, Math.round(100 / cs)) * cs;
+    }
+
+    function invalidateBlocks() {
+      blocksEl.innerHTML = '';
+    }
+
+    function buildFrozenBlockElement(blockIdx, blockSize, chunkSize, showIdx, anchorCount) {
+      const blockStart = blockIdx * blockSize + 1;
+      const blockEnd = blockStart + blockSize;
+      const div = document.createElement('div');
+      div.className = 'pi-block' + (chunkSize <= 1 ? ' unbroken' : '');
+
+      let html = '';
+      if (blockIdx === 0) {
+        html += '<span class="prefix">3.</span>';
+      }
+
+      if (chunkSize <= 1) {
+        const end = blockEnd - 1;
+        if (end <= anchorCount) {
+          html += '<span class="anchor-digit">' + piStr.slice(blockStart, blockEnd) + '</span>';
+        } else if (blockStart > anchorCount) {
+          html += '<span class="typed">' + piStr.slice(blockStart, blockEnd) + '</span>';
+        } else {
+          html += '<span class="anchor-digit">' + piStr.slice(blockStart, anchorCount + 1) + '</span>';
+          html += '<span class="typed">' + piStr.slice(anchorCount + 1, blockEnd) + '</span>';
+        }
+      } else {
+        const idxStep = chunkSize >= 8 ? chunkSize : chunkSize * 2;
+        for (let cs = blockStart; cs < blockEnd; cs += chunkSize) {
+          const ce = Math.min(blockEnd - 1, cs + chunkSize - 1);
+          const idxBadge = (showIdx && cs > 1 && (cs - 1) % idxStep === 0)
+            ? '<span class="ci">' + cs + '</span>'
+            : '';
+
+          if (ce <= anchorCount) {
+            html += '<span class="cg">' + idxBadge + '<span class="anchor-digit">' + piStr.slice(cs, ce + 1) + '</span></span>';
+          } else if (cs > anchorCount) {
+            html += '<span class="cg">' + idxBadge + '<span class="typed">' + piStr.slice(cs, ce + 1) + '</span></span>';
+          } else {
+            html += '<span class="cg">' + idxBadge +
+              '<span class="anchor-digit">' + piStr.slice(cs, anchorCount + 1) + '</span>' +
+              '<span class="typed">' + piStr.slice(anchorCount + 1, ce + 1) + '</span></span>';
+          }
+        }
+      }
+
+      div.innerHTML = html;
+      return div;
+    }
+
+    function renderDisplay() {
+      const anchorCount = Math.max(0, runStartAt - 1);
+      const totalFixed = anchorCount + typedDigits.length;
+      const totalDisplayEnd = totalFixed + revealedDigits.length;
+      ensurePiDigits(totalDisplayEnd + 5);
+
+      const chunkSize = gameSettings.chunkSize;
+      const showIdx = gameSettings.showIndices;
+      const blockSize = getBlockSize();
+
+      // Sync frozen completed blocks (O(1) per normal keypress!)
+      const frozenBlocks = Math.floor(totalFixed / blockSize);
+      while (blocksEl.children.length > frozenBlocks) {
+        blocksEl.lastElementChild.remove();
+      }
+      if (blocksEl.children.length < frozenBlocks) {
+        const frag = document.createDocumentFragment();
+        for (let b = blocksEl.children.length; b < frozenBlocks; b++) {
+          frag.appendChild(buildFrozenBlockElement(b, blockSize, chunkSize, showIdx, anchorCount));
+        }
+        blocksEl.appendChild(frag);
+      }
+
+      // Render only the active tail (< blockSize digits + revealed + slots)
+      const tailStart = frozenBlocks * blockSize + 1;
+      let tailHtml = '';
+
+      if (chunkSize <= 1) {
+        tailHtml += '<div class="display-flow-unbroken">';
+        if (frozenBlocks === 0) tailHtml += '<span class="prefix">3.</span>';
+
+        if (tailStart <= anchorCount) {
+          tailHtml += '<span class="anchor-digit">' + piStr.slice(tailStart, anchorCount + 1) + '</span>';
+        }
+        const typedStartPos = Math.max(tailStart, anchorCount + 1);
+        if (typedStartPos <= totalFixed) {
+          tailHtml += '<span class="typed">' + piStr.slice(typedStartPos, totalFixed + 1) + '</span>';
+        }
+        if (revealedDigits.length > 0) {
+          tailHtml += '<span class="revealed">' + revealedDigits + '</span>';
+        }
+        if (!gameOver) {
+          tailHtml += '<span class="cursor"></span>';
+        }
+        tailHtml += '</div>';
+      } else {
+        if (frozenBlocks === 0) tailHtml += '<span class="prefix">3.</span>';
+
+        let slotsCount = 0;
+        if (!gameOver) {
+          const activePos = totalFixed + 1;
+          const activeChunkEnd = Math.ceil(activePos / chunkSize) * chunkSize;
+          slotsCount = activeChunkEnd - totalFixed;
+        }
+
+        const totalEndPos = totalDisplayEnd + slotsCount;
+        const idxStep = chunkSize >= 8 ? chunkSize : chunkSize * 2;
+
+        for (let cs = tailStart; cs <= totalEndPos; cs += chunkSize) {
+          const ce = Math.min(totalEndPos, cs + chunkSize - 1);
+          tailHtml += '<span class="cg">';
+          if (showIdx && cs > 1 && (cs - 1) % idxStep === 0) {
+            tailHtml += '<span class="ci">' + cs + '</span>';
+          }
+
+          if (ce <= totalFixed) {
+            // Completed chunk in tail (pure anchor, pure typed, or boundary)
+            if (ce <= anchorCount) {
+              tailHtml += '<span class="anchor-digit">' + piStr.slice(cs, ce + 1) + '</span>';
+            } else if (cs > anchorCount) {
+              tailHtml += '<span class="typed">' + piStr.slice(cs, ce + 1) + '</span>';
+            } else {
+              tailHtml += '<span class="anchor-digit">' + piStr.slice(cs, anchorCount + 1) + '</span>' +
+                '<span class="typed">' + piStr.slice(anchorCount + 1, ce + 1) + '</span>';
+            }
+          } else {
+            // Active or revealed chunk
+            for (let pos = cs; pos <= ce; pos++) {
+              if (pos <= anchorCount) {
+                tailHtml += '<span class="anchor-digit">' + piStr[pos] + '</span>';
+              } else if (pos <= totalFixed) {
+                tailHtml += '<span class="typed">' + piStr[pos] + '</span>';
+              } else if (pos <= totalDisplayEnd) {
+                tailHtml += '<span class="revealed">' + revealedDigits[pos - totalFixed - 1] + '</span>';
+              } else {
+                const isActiveSlot = (pos === totalFixed + 1);
+                tailHtml += '<span class="chunk-slot' + (isActiveSlot ? ' active' : '') + '">_</span>';
+              }
+            }
+          }
+          tailHtml += '</span>';
+        }
+      }
+
+      activeTailEl.innerHTML = tailHtml;
+      displayBox.scrollTop = displayBox.scrollHeight;
+    }
+
+    function flushSaveState() {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+      }
+      try {
+        const payload = {
+          best: best,
+          audio: audioSettings,
+          settings: gameSettings,
+          unlockedMilestones: unlockedMilestones,
+          run: {
+            startAt: runStartAt,
+            typed: typedDigits,
+            revealed: revealedDigits,
+            count: count,
+            mistakes: mistakes,
+            elapsedMs: elapsedMs,
+            gameOver: gameOver,
+            endReason: endReason,
+            lastGuessedDigit: lastGuessedDigit,
+            runNewMilestones: runNewMilestones
+          }
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        localStorage.setItem('pi_best_score', String(best));
+      } catch (e) {}
+    }
+
+    function scheduleSaveState() {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(flushSaveState, 300);
+    }
+
+    window.addEventListener('beforeunload', flushSaveState);
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'hidden') flushSaveState();
+    });
+
+    function renderFeedback() {
+      const position = runStartAt + typedDigits.length;
+      const finalTime = formatTime(elapsedMs);
+      const finalWpm = computeWpm(count, elapsedMs);
+      const mistakeNote = mistakes > 0 ? ' &bull; Mistakes: <strong>' + mistakes + '</strong>' : '';
+      const drillNote = runStartAt > 1 ? ' (from #' + runStartAt.toLocaleString() + ')' : '';
+
+      let milestoneHtml = '';
+      if (runNewMilestones.length > 0) {
+        milestoneHtml =
+          '<div class="milestone-banner">' +
+          '<div class="milestone-banner-title">Milestones Unlocked!</div>' +
+          '<div class="milestone-chips">' +
+          runNewMilestones.map(function(m) {
+            return '<span class="milestone-chip">' + formatMilestoneLabel(m) + '</span>';
+          }).join('') +
+          '</div></div>';
+      } else if (runStartAt === 1 && mistakes > 0 && count >= getNextProceduralMilestone(unlockedMilestones.length ? unlockedMilestones[unlockedMilestones.length - 1] : 0)) {
+        milestoneHtml =
+          '<div class="milestone-banner" style="color: var(--muted); font-size: 0.8rem;">' +
+          'Clean run (0 mistakes) required to unlock new milestones.' +
+          '</div>';
+      }
+
+      if (endReason === 'wrong') {
+        shaderState = 1;
+        feedbackEl.className = 'feedback error';
+        feedbackEl.innerHTML =
+          '<strong>Game Over!</strong> You typed <span class="highlight-digit">' +
+          lastGuessedDigit +
+          '</span>, but decimal place #' +
+          position.toLocaleString() +
+          ' was actually <span class="highlight-digit">' +
+          nextExpectedDigit +
+          '</span>.<br>Final streak: <strong>' +
+          count +
+          '</strong> digits' + drillNote + ' in <strong>' +
+          finalTime +
+          '</strong> (<strong>' +
+          finalWpm +
+          ' WPM</strong>).' + milestoneHtml;
+      } else if (endReason === 'giveup') {
+        shaderState = 2;
+        feedbackEl.className = 'feedback giveup';
+        feedbackEl.innerHTML =
+          '<strong>Stopped!</strong> Decimal place #' +
+          position.toLocaleString() +
+          ' is <span class="highlight-digit">' +
+          nextExpectedDigit +
+          '</span>.<br>Final streak: <strong>' +
+          count +
+          '</strong> digits' + drillNote + ' in <strong>' +
+          finalTime +
+          '</strong> (<strong>' +
+          finalWpm +
+          ' WPM</strong>)' + mistakeNote + '.' + milestoneHtml;
+      }
+    }
+
+    function restoreOrInitGame() {
+      syncSoundUI();
+      syncSettingsUI();
+      randomizeVibe();
+      loadTracksFromDB();
+
+      const savedRun = savedData.run;
+      if (savedRun && (savedRun.count > 0 || savedRun.gameOver || Number(savedRun.startAt || 1) > 1)) {
+        runStartAt = Math.max(1, Math.min(MAX_DRILL_START, Number(savedRun.startAt || gameSettings.startAt || 1)));
+        typedDigits = savedRun.typed || '';
+        revealedDigits = savedRun.revealed || '';
+        count = Number(savedRun.count || typedDigits.length);
+        mistakes = Number(savedRun.mistakes || 0);
+        elapsedMs = Number(savedRun.elapsedMs || 0);
+        gameOver = Boolean(savedRun.gameOver);
+        endReason = savedRun.endReason || null;
+        lastGuessedDigit = savedRun.lastGuessedDigit !== undefined ? savedRun.lastGuessedDigit : null;
+        runNewMilestones = Array.isArray(savedRun.runNewMilestones) ? savedRun.runNewMilestones : [];
+
+        nextExpectedDigit = getPiDigit(runStartAt + typedDigits.length);
+
+        invalidateBlocks();
+        updateMetricsUI();
+        renderDisplay();
+
+        if (gameOver) {
+          timerRunning = false;
+          digitInput.disabled = true;
+          backspaceBtn.disabled = true;
+          dontKnowBtn.disabled = true;
+          showNextBtn.classList.add('visible');
+          renderFeedback();
+        } else {
+          timerRunning = false;
+          lastTimerNow = null;
+          shaderState = 0;
+          digitInput.disabled = false;
+          backspaceBtn.disabled = false;
+          dontKnowBtn.disabled = false;
+          showNextBtn.classList.remove('visible');
+          feedbackEl.className = 'feedback';
+          feedbackEl.innerHTML = '';
+          digitInput.focus();
+        }
+      } else {
+        initGame();
+      }
+    }
+
+    function startNewRunInternal() {
+      runStartAt = gameSettings.startAt;
+      typedDigits = '';
+      revealedDigits = '';
+      nextExpectedDigit = getPiDigit(runStartAt);
+
+      count = 0;
+      mistakes = 0;
+      elapsedMs = 0;
+      timerRunning = false;
+      lastTimerNow = null;
+      gameOver = false;
+      endReason = null;
+      lastGuessedDigit = null;
+      runNewMilestones = [];
+      shaderState = 0;
+      greenPulse = 0.0;
+      errorPulse = 0.0;
+
+      invalidateBlocks();
+      updateMetricsUI();
+      updateStartAtDesc();
+      renderDisplay();
+
+      feedbackEl.className = 'feedback';
+      feedbackEl.innerHTML = '';
+      showNextBtn.classList.remove('visible');
+
+      digitInput.value = '';
+      digitInput.disabled = false;
+      backspaceBtn.disabled = false;
+      dontKnowBtn.disabled = false;
+      digitInput.focus();
+      flushSaveState();
+    }
+
+    function initGame() {
+      const needed = gameSettings.startAt + 50;
+      if (piStr.length <= needed && needed > 15000) {
+        startAtDesc.textContent = 'Computing ' + needed.toLocaleString() + ' digits of π...';
+        applyStartAtBtn.disabled = true;
+        setTimeout(function() {
+          ensurePiDigits(needed);
+          applyStartAtBtn.disabled = false;
+          startNewRunInternal();
+        }, 16);
+      } else {
+        startNewRunInternal();
+      }
+    }
+
+    function endGame(reason, guessedDigit) {
+      gameOver = true;
+      timerRunning = false;
+      lastTimerNow = null;
+      endReason = reason;
+      lastGuessedDigit = guessedDigit;
+      digitInput.disabled = true;
+      backspaceBtn.disabled = true;
+      dontKnowBtn.disabled = true;
+      greenPulse = 0.0;
+
+      if (reason === 'wrong') {
+        playDigitChime(0, 'wrong');
+      } else {
+        playDigitChime(0, 'giveup');
+      }
+
+      renderMilestonesPanel();
+      renderDisplay();
+      renderFeedback();
+      showNextBtn.classList.add('visible');
+      flushSaveState();
+    }
+
+    function revealNextFive() {
+      if (!gameOver) return;
+      initAudio();
+
+      const startPos = runStartAt + typedDigits.length + revealedDigits.length;
+      let chunk = '';
+      for (let i = 0; i < 5; i++) {
+        chunk += String(getPiDigit(startPos + i));
+      }
+
+      revealedDigits += chunk;
+      renderDisplay();
+      playDigitChime(5, 'right');
+      flushSaveState();
+    }
+
+    function checkAndRecordMilestones(currentScore) {
+      if (runStartAt !== 1 || mistakes > 0) return;
+      const achieved = generateMilestonesUpTo(currentScore);
+      for (let i = 0; i < achieved.length; i++) {
+        const m = achieved[i];
+        if (unlockedMilestones.indexOf(m) === -1) {
+          unlockedMilestones.push(m);
+          unlockedMilestones.sort(function(a, b) { return a - b; });
+          if (runNewMilestones.indexOf(m) === -1) {
+            runNewMilestones.push(m);
+          }
+        }
+      }
+    }
+
+    function handleDigit(char) {
+      if (gameOver) return;
+      initAudio();
+      const num = Number(char);
+
+      if (num === nextExpectedDigit) {
+        if (!timerRunning) {
+          timerRunning = true;
+          lastTimerNow = performance.now();
+        }
+        typedDigits += char;
+        count = typedDigits.length;
+        greenPulse = 1.0;
+        playDigitChime(num, 'right');
+
+        if (feedbackEl.classList.contains('practice-warn')) {
+          feedbackEl.className = 'feedback';
+          feedbackEl.innerHTML = '';
+        }
+
+        if (runStartAt === 1 && mistakes === 0) {
+          if (count > best) {
+            best = count;
+            bestEl.textContent = best;
+          }
+          checkAndRecordMilestones(count);
+        }
+
+        nextExpectedDigit = getPiDigit(runStartAt + typedDigits.length);
+        updateMetricsUI();
+        renderDisplay();
+        scheduleSaveState();
+      } else {
+        if (gameSettings.practiceMode) {
+          if (!timerRunning && typedDigits.length > 0) {
+            timerRunning = true;
+            lastTimerNow = performance.now();
+          }
+          mistakes++;
+          errorPulse = 1.0;
+          playDigitChime(0, 'wrong');
+
+          displayBox.classList.remove('shake');
+          void displayBox.offsetWidth;
+          displayBox.classList.add('shake');
+
+          const pos = runStartAt + typedDigits.length;
+          feedbackEl.className = 'feedback practice-warn';
+          feedbackEl.innerHTML =
+            '<strong>Wrong!</strong> <span class="highlight-digit">' +
+            char +
+            '</span> is not decimal place #' +
+            pos.toLocaleString() +
+            '. Keep digging or use Backspace to re-anchor.';
+          scheduleSaveState();
+        } else {
+          endGame('wrong', char);
+        }
+      }
+    }
+
+    function handleBackspace() {
+      if (gameOver || typedDigits.length === 0) return;
+      initAudio();
+      typedDigits = typedDigits.slice(0, -1);
+      count = typedDigits.length;
+      nextExpectedDigit = getPiDigit(runStartAt + typedDigits.length);
+
+      if (feedbackEl.classList.contains('practice-warn')) {
+        feedbackEl.className = 'feedback';
+        feedbackEl.innerHTML = '';
+      }
+
+      playDigitChime(0, 'back');
+      updateMetricsUI();
+      renderDisplay();
+      scheduleSaveState();
+    }
+
+    // --- Settings Event Handlers ---
+    practiceToggleBtn.addEventListener('click', function() {
+      gameSettings.practiceMode = !gameSettings.practiceMode;
+      syncSettingsUI();
+      if (!gameSettings.practiceMode) {
+        initGame();
+      } else {
+        flushSaveState();
+        digitInput.focus();
+      }
+    });
+
+    function applyStartAtValue(val) {
+      const parsed = Math.max(1, Math.min(MAX_DRILL_START, Math.floor(Number(val) || 1)));
+      gameSettings.startAt = parsed;
+      syncSettingsUI();
+      initGame();
+    }
+
+    startAtInput.addEventListener('input', function() {
+      const parsed = Math.max(1, Math.min(MAX_DRILL_START, Math.floor(Number(startAtInput.value) || 1)));
+      updateStartAtDesc(parsed);
+    });
+
+    applyStartAtBtn.addEventListener('click', function() {
+      applyStartAtValue(startAtInput.value);
+    });
+
+    startAtInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyStartAtValue(startAtInput.value);
+      }
+    });
+
+    resetStartAtBtn.addEventListener('click', function() {
+      applyStartAtValue(1);
+    });
+
+    chunkPillsEl.addEventListener('click', function(e) {
+      const btn = e.target.closest('.chunk-pill');
+      if (!btn) return;
+      gameSettings.chunkSize = Number(btn.dataset.chunk);
+      syncSettingsUI();
+      invalidateBlocks();
+      renderDisplay();
+      flushSaveState();
+      digitInput.focus();
+    });
+
+    customChunkInput.addEventListener('input', function() {
+      const v = Math.max(1, Math.min(25, Math.floor(Number(customChunkInput.value) || 1)));
+      gameSettings.chunkSize = v;
+      syncSettingsUI();
+      invalidateBlocks();
+      renderDisplay();
+      scheduleSaveState();
+    });
+
+    chunkIndicesBtn.addEventListener('click', function() {
+      gameSettings.showIndices = !gameSettings.showIndices;
+      syncSettingsUI();
+      invalidateBlocks();
+      renderDisplay();
+      flushSaveState();
+    });
+
+    // --- Input & Control Listeners ---
+    digitInput.addEventListener('input', function(e) {
+      const raw = e.target.value;
+      e.target.value = '';
+
+      for (let i = 0; i < raw.length; i++) {
+        const char = raw[i];
+        if (char >= '0' && char <= '9') {
+          handleDigit(char);
+          if (gameOver) break;
+        }
+      }
+    });
+
+    digitInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleBackspace();
+      }
+    });
+
+    digitInput.addEventListener('beforeinput', function(e) {
+      if (e.inputType === 'deleteContentBackward') {
+        e.preventDefault();
+        handleBackspace();
+      }
+    });
+
+    backspaceBtn.addEventListener('click', function() {
+      handleBackspace();
+      digitInput.focus();
+    });
+
+    dontKnowBtn.addEventListener('click', function() {
+      if (!gameOver) endGame('giveup', null);
+    });
+
+    showNextBtn.addEventListener('click', revealNextFive);
+    restartBtn.addEventListener('click', initGame);
+
+    document.addEventListener('keydown', function(e) {
+      if (document.activeElement && (document.activeElement === startAtInput || document.activeElement === customChunkInput)) {
+        return;
+      }
+      if (gameOver && (e.key === 'Enter' || e.key.toLowerCase() === 'r')) {
+        e.preventDefault();
+        initGame();
+      }
+    });
+
+    restoreOrInitGame();
+  </script>
+</body>
+</html>
