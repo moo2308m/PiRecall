@@ -3412,8 +3412,8 @@
       };
     }
 
-    function pushSettingsUndo(beforeSnap, label) {
-      const afterSnap = snapshotAllSettings();
+    function pushSettingsUndo(beforeSnap, label, customAfterSnap) {
+      const afterSnap = customAfterSnap || snapshotAllSettings();
       if (JSON.stringify(beforeSnap) === JSON.stringify(afterSnap)) return false;
       undoStack.push({
         kind: 'settings',
@@ -3460,6 +3460,10 @@
       if (curSource === 'custom' && importedTracks.some(function(t) { return t.id === curTrackId; })) {
         audioSettings.audioSource = curSource;
         audioSettings.activeTrackId = curTrackId;
+      }
+
+      if (Array.isArray(snap.unlockedMilestones)) {
+        unlockedMilestones = snap.unlockedMilestones.slice().sort(function(a, b) { return a - b; });
       }
 
       if (!gameSettings.fx.enabled) {
@@ -4138,7 +4142,8 @@
         version: 2,
         exportedAt: new Date().toISOString(),
         settings: exportedGame,
-        audio: exportedAudio
+        audio: exportedAudio,
+        unlockedMilestones: unlockedMilestones.slice()
       };
     }
 
@@ -4179,7 +4184,7 @@
       try {
         const text = await file.text();
         const parsed = JSON.parse(text);
-        if (!parsed || typeof parsed !== 'object' || (!parsed.settings && !parsed.audio)) {
+        if (!parsed || typeof parsed !== 'object' || (!parsed.settings && !parsed.audio && !parsed.unlockedMilestones)) {
           throw new Error('Invalid format');
         }
         const snap = snapshotAllSettings();
@@ -4187,10 +4192,18 @@
           game: parsed.settings ? sanitizeGameSettings(parsed.settings) : cloneObj(gameSettings),
           audio: parsed.audio ? sanitizeAudioSettings(parsed.audio, false) : cloneObj(audioSettings)
         };
+        if (Array.isArray(parsed.unlockedMilestones)) {
+          snap.unlockedMilestones = unlockedMilestones.slice();
+          importedSnap.unlockedMilestones = Array.from(new Set(
+            parsed.unlockedMilestones
+              .map(Number)
+              .filter(function(n) { return Number.isInteger(n) && n > 0; })
+          )).sort(function(a, b) { return a - b; });
+        }
         importedSnap.game.drawerOpen = gameSettings.drawerOpen;
 
         applySettingsSnapshot(importedSnap);
-        pushSettingsUndo(snap, 'Import Settings');
+        pushSettingsUndo(snap, 'Import Settings', importedSnap);
         backupStatusText.textContent = 'Imported "' + file.name + '" (Ctrl+Z to undo)';
         showToast('Imported settings');
       } catch (err) {
