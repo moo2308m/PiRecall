@@ -14,6 +14,8 @@
       --success: #4ade80;
       --danger: #f87171;
       --warn: #fbbf24;
+      --gold: #facc15;
+      --shake-scale: 1;
     }
 
     * {
@@ -42,9 +44,42 @@
       pointer-events: none;
     }
 
+    #fx-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 25;
+      pointer-events: none;
+    }
+
+    .undo-toast {
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translate3d(-50%, -14px, 0);
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      color: var(--text);
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      z-index: 40;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    .undo-toast.visible {
+      opacity: 1;
+      transform: translate3d(-50%, 0, 0);
+    }
+
     .container {
       width: 100%;
-      max-width: 700px;
+      max-width: 720px;
       background: var(--card);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
@@ -52,6 +87,38 @@
       padding: 1.85rem;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
       border: 1px solid rgba(56, 189, 248, 0.25);
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .container.pb-glow {
+      border-color: rgba(250, 204, 21, 0.65);
+      box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.55), 0 0 34px rgba(250, 204, 21, 0.18);
+    }
+
+    .container.shake-celebrate {
+      animation: celebrateShake 0.62s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    .container.shake-loss {
+      animation: lossShake 0.42s ease both;
+    }
+
+    @keyframes celebrateShake {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+      10% { transform: translate3d(calc(-8px * var(--shake-scale)), calc(-5px * var(--shake-scale)), 0) scale(calc(1 + 0.018 * var(--shake-scale))) rotate(calc(-0.7deg * var(--shake-scale))); }
+      22% { transform: translate3d(calc(8px * var(--shake-scale)), calc(4px * var(--shake-scale)), 0) scale(calc(1 + 0.014 * var(--shake-scale))) rotate(calc(0.65deg * var(--shake-scale))); }
+      36% { transform: translate3d(calc(-7px * var(--shake-scale)), calc(4px * var(--shake-scale)), 0) scale(calc(1 + 0.01 * var(--shake-scale))) rotate(calc(-0.45deg * var(--shake-scale))); }
+      52% { transform: translate3d(calc(6px * var(--shake-scale)), calc(-3px * var(--shake-scale)), 0) scale(calc(1 + 0.006 * var(--shake-scale))) rotate(calc(0.3deg * var(--shake-scale))); }
+      68% { transform: translate3d(calc(-4px * var(--shake-scale)), calc(2px * var(--shake-scale)), 0) rotate(calc(-0.18deg * var(--shake-scale))); }
+      84% { transform: translate3d(calc(2px * var(--shake-scale)), calc(-1px * var(--shake-scale)), 0) rotate(calc(0.08deg * var(--shake-scale))); }
+    }
+
+    @keyframes lossShake {
+      0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      18% { transform: translate3d(calc(-7px * var(--shake-scale)), calc(2px * var(--shake-scale)), 0) rotate(calc(-0.4deg * var(--shake-scale))); }
+      38% { transform: translate3d(calc(7px * var(--shake-scale)), calc(-2px * var(--shake-scale)), 0) rotate(calc(0.35deg * var(--shake-scale))); }
+      58% { transform: translate3d(calc(-5px * var(--shake-scale)), calc(1px * var(--shake-scale)), 0) rotate(calc(-0.2deg * var(--shake-scale))); }
+      78% { transform: translate3d(calc(3px * var(--shake-scale)), 0, 0); }
     }
 
     header {
@@ -120,6 +187,23 @@
       font-size: 1.02rem;
       font-weight: 800;
       font-variant-numeric: tabular-nums;
+      display: inline-block;
+      transition: color 0.2s ease;
+    }
+
+    .stats span strong.new-best-live {
+      color: var(--gold);
+    }
+
+    .stats span strong.best-pop {
+      color: var(--gold);
+      animation: bestPop 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes bestPop {
+      0% { transform: scale(1); }
+      35% { transform: scale(1.48); text-shadow: 0 0 16px rgba(250, 204, 21, 0.8); }
+      100% { transform: scale(1); }
     }
 
     .drawer-toggles {
@@ -132,13 +216,13 @@
       color: var(--accent);
       border: 1px solid rgba(56, 189, 248, 0.35);
       border-radius: 8px;
-      padding: 0.4rem 0.72rem;
+      padding: 0.42rem 0.8rem;
       font-size: 0.82rem;
       font-weight: 700;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.38rem;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
 
@@ -190,18 +274,22 @@
     }
 
     .panel {
-      background: rgba(11, 17, 32, 0.82);
+      background: rgba(11, 17, 32, 0.84);
       border: 1px solid rgba(56, 189, 248, 0.25);
       border-radius: 12px;
-      padding: 1rem 1.15rem;
+      padding: 0.95rem 1.05rem;
+      max-height: 64vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(56, 189, 248, 0.3) transparent;
     }
 
     .panel-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.85rem;
-      padding-bottom: 0.65rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.6rem;
       border-bottom: 1px solid rgba(51, 65, 85, 0.6);
       gap: 0.5rem;
       flex-wrap: wrap;
@@ -219,8 +307,9 @@
 
     .panel-actions {
       display: flex;
-      gap: 0.45rem;
+      gap: 0.4rem;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .btn-mini {
@@ -228,13 +317,13 @@
       color: var(--accent);
       border: 1px solid rgba(56, 189, 248, 0.3);
       border-radius: 7px;
-      padding: 0.34rem 0.65rem;
-      font-size: 0.78rem;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.76rem;
       font-weight: 700;
       cursor: pointer;
     }
 
-    .btn-mini:hover {
+    .btn-mini:hover:not(:disabled) {
       background: rgba(56, 189, 248, 0.25);
     }
 
@@ -256,21 +345,180 @@
       border-color: rgba(251, 191, 36, 0.35);
     }
 
+    .btn-mini.xs {
+      padding: 0.18rem 0.46rem;
+      font-size: 0.71rem;
+      border-radius: 5px;
+    }
+
+    /* Collapsible Sub-Sections */
+    .sub-section {
+      background: rgba(15, 23, 42, 0.58);
+      border: 1px solid rgba(51, 65, 85, 0.65);
+      border-radius: 10px;
+      padding: 0.72rem 0.9rem;
+      margin-bottom: 0.65rem;
+      transition: border-color 0.2s ease;
+    }
+
+    .sub-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .sub-section:not(.collapsed) {
+      border-color: rgba(56, 189, 248, 0.26);
+    }
+
+    .sub-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      cursor: pointer;
+      user-select: none;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.48);
+      transition: padding-bottom 0.22s ease, border-color 0.22s ease;
+    }
+
+    .sub-section.collapsed .sub-section-header {
+      padding-bottom: 0;
+      border-bottom-color: transparent;
+    }
+
+    .sub-section-left {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .sub-chevron {
+      display: inline-block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), color 0.15s;
+    }
+
+    .sub-section.collapsed .sub-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .sub-section-header:hover .sub-chevron {
+      color: var(--accent);
+    }
+
+    .sub-section-title {
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+    }
+
+    .sub-summary {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 240px;
+    }
+
+    .sub-section-body {
+      display: grid;
+      grid-template-rows: 1fr;
+      opacity: 1;
+      transition:
+        grid-template-rows 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.22s ease;
+    }
+
+    .sub-section.collapsed .sub-section-body {
+      grid-template-rows: 0fr;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sub-section-inner {
+      overflow: hidden;
+    }
+
+    .sub-section-content {
+      padding-top: 0.72rem;
+    }
+
     .sliders-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.7rem 1.1rem;
+      gap: 0.65rem 1rem;
     }
 
     .settings-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.9rem 1.15rem;
+      gap: 0.85rem 1.1rem;
     }
 
-    @media (max-width: 540px) {
+    .fx-master-bar {
+      background: rgba(30, 41, 59, 0.55);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 8px;
+      padding: 0.58rem 0.72rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .fx-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.58rem 0.8rem;
+    }
+
+    .fx-item {
+      background: rgba(11, 17, 32, 0.6);
+      border: 1px solid rgba(51, 65, 85, 0.65);
+      border-radius: 8px;
+      padding: 0.5rem 0.66rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.34rem;
+      transition: opacity 0.15s ease, border-color 0.15s ease;
+    }
+
+    .fx-item.muted {
+      opacity: 0.48;
+    }
+
+    .fx-item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .fx-item-name {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .fx-item-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 560px) {
       .sliders-grid,
-      .settings-grid {
+      .settings-grid,
+      .fx-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -289,10 +537,11 @@
       justify-content: space-between;
       align-items: center;
       gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .setting-desc {
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       color: var(--muted);
       line-height: 1.35;
     }
@@ -320,6 +569,53 @@
       border-color: var(--accent);
     }
 
+    .slider-num-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.16rem;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(51, 65, 85, 0.85);
+      border-radius: 5px;
+      padding: 0.08rem 0.32rem;
+      transition: border-color 0.15s;
+    }
+
+    .slider-num-wrap:focus-within {
+      border-color: var(--accent);
+    }
+
+    .slider-num-input {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: monospace;
+      font-size: 0.76rem;
+      font-weight: 700;
+      width: 38px;
+      text-align: right;
+      outline: none;
+      padding: 0;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .slider-num-input.wide {
+      width: 44px;
+    }
+
+    .slider-num-input::-webkit-outer-spin-button,
+    .slider-num-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .slider-unit {
+      font-family: monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      user-select: none;
+    }
+
     .pill-group {
       display: flex;
       gap: 0.35rem;
@@ -344,17 +640,10 @@
       border-color: rgba(56, 189, 248, 0.5);
     }
 
-    .milestones-section {
-      margin-top: 0.9rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid rgba(51, 65, 85, 0.6);
-    }
-
     .milestone-chips {
       display: flex;
       gap: 0.4rem;
       flex-wrap: wrap;
-      margin-top: 0.45rem;
     }
 
     .milestone-chip {
@@ -375,9 +664,22 @@
     }
 
     .music-import-section {
-      margin-top: 0.9rem;
-      padding-top: 0.75rem;
+      margin-top: 0.85rem;
+      padding-top: 0.72rem;
       border-top: 1px solid rgba(51, 65, 85, 0.6);
+    }
+
+    .sound-meta-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.68rem;
+      padding: 0.48rem 0.68rem;
+      background: rgba(11, 17, 32, 0.55);
+      border: 1px solid rgba(51, 65, 85, 0.55);
+      border-radius: 8px;
     }
 
     .track-list {
@@ -418,20 +720,17 @@
     .slider-row {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.26rem;
     }
 
     .slider-label {
       display: flex;
       justify-content: space-between;
-      font-size: 0.78rem;
+      align-items: center;
+      font-size: 0.77rem;
       font-weight: 600;
       color: var(--muted);
-    }
-
-    .slider-label span:last-child {
-      color: var(--text);
-      font-family: monospace;
+      gap: 0.5rem;
     }
 
     input[type="range"] {
@@ -479,15 +778,15 @@
     }
 
     .display-box.shake {
-      animation: shakeAnim 0.3s ease;
+      animation: shakeAnim 0.34s ease;
       border-color: rgba(248, 113, 113, 0.65);
     }
 
     @keyframes shakeAnim {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      50% { transform: translateX(5px); }
-      75% { transform: translateX(-4px); }
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      22% { transform: translate3d(calc(-6px * var(--shake-scale)), 0, 0); }
+      48% { transform: translate3d(calc(6px * var(--shake-scale)), 0, 0); }
+      74% { transform: translate3d(calc(-4px * var(--shake-scale)), 0, 0); }
     }
 
     .pi-block {
@@ -715,6 +1014,22 @@
       color: #fff;
     }
 
+    .pb-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.45rem;
+      padding: 0.24rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(250, 204, 21, 0.2);
+      border: 1px solid rgba(250, 204, 21, 0.55);
+      color: var(--gold);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
     .milestone-banner {
       margin-top: 0.65rem;
       padding-top: 0.6rem;
@@ -733,8 +1048,10 @@
 </head>
 <body>
   <canvas id="bg-shader"></canvas>
+  <canvas id="fx-canvas"></canvas>
+  <div class="undo-toast" id="undoToast"></div>
 
-  <div class="container">
+  <div class="container" id="mainContainer">
     <header>
       <div class="title-group">
         <h1>π Recall</h1>
@@ -749,135 +1066,464 @@
           <span>WPM: <strong id="wpm">0</strong></span>
         </div>
         <div class="drawer-toggles">
-          <button class="btn-drawer-toggle" id="settingsDrawerBtn" title="Practice &amp; Display Settings">
+          <button class="btn-drawer-toggle" id="settingsDrawerBtn" title="Settings (Recall, Particles, Waves, Sound &amp; Backup)">
             <span>Settings</span>
-            <span class="chevron">&#9662;</span>
-          </button>
-          <button class="btn-drawer-toggle active" id="soundDrawerBtn" title="Sound Settings">
-            <span>Sound</span>
             <span class="chevron">&#9662;</span>
           </button>
         </div>
       </div>
     </header>
 
-    <!-- Practice, Chunk Drill, Visual Chunking & Milestones Drawer -->
+    <!-- Unified Settings Drawer with Collapsible Subcategories -->
     <div class="drawer" id="settingsDrawer">
       <div class="drawer-inner">
         <div class="panel">
           <div class="panel-header">
             <div class="vibe-info">
-              Practice &amp; Recall Settings &bull; <strong id="nextMilestoneLabel">Next milestone: 1 digit</strong>
+              Settings &bull; <strong id="nextMilestoneLabel">Next milestone: 1 digit</strong>
             </div>
             <div class="panel-actions">
-              <button class="btn-mini off" id="practiceToggleBtn">Practice Mode: Off</button>
+              <button class="btn-mini" id="undoBtn" title="Undo (Ctrl+Z / Cmd+Z)">Undo</button>
+              <button class="btn-mini" id="redoBtn" title="Redo (Ctrl+Y / Cmd+Shift+Z)">Redo</button>
             </div>
           </div>
 
-          <div class="settings-grid">
-            <div class="setting-block">
-              <div class="setting-title">
-                <span>Chunk Drill — Where to start</span>
+          <!-- Sub-section 1: Recall & Practice -->
+          <div class="sub-section" data-section="recall">
+            <div class="sub-section-header" role="button" tabindex="0">
+              <div class="sub-section-left">
+                <span class="sub-chevron">&#9662;</span>
+                <span class="sub-section-title">Recall &amp; Practice</span>
+                <span class="sub-summary" id="recallSummary">Chunk 5</span>
               </div>
-              <div class="inline-row">
-                <input type="number" class="mini-input" id="startAtInput" min="1" max="50000" value="1" />
-                <button class="btn-mini" id="applyStartAtBtn">Start Here</button>
-                <button class="btn-mini" id="resetStartAtBtn">Reset to 1</button>
-              </div>
-              <div class="setting-desc" id="startAtDesc">
-                Normal run starting from 3. (decimal #1)
-              </div>
-            </div>
-
-            <div class="setting-block">
-              <div class="setting-title">
-                <span>Visual Chunking</span>
-                <button class="btn-mini" id="chunkIndicesBtn">Indices: On</button>
-              </div>
-              <div class="pill-group" id="chunkPills">
-                <button class="chunk-pill" data-chunk="1">Off</button>
-                <button class="chunk-pill" data-chunk="2">2</button>
-                <button class="chunk-pill" data-chunk="3">3</button>
-                <button class="chunk-pill" data-chunk="4">4</button>
-                <button class="chunk-pill" data-chunk="5">5</button>
-                <button class="chunk-pill" data-chunk="6">6</button>
-                <button class="chunk-pill" data-chunk="8">8</button>
-                <button class="chunk-pill" data-chunk="10">10</button>
-              </div>
-              <div class="inline-row">
-                <span class="setting-desc">Custom:</span>
-                <input type="number" class="mini-input" id="customChunkInput" min="1" max="25" value="5" style="width: 68px;" />
-              </div>
-            </div>
-          </div>
-
-          <div class="milestones-section">
-            <div class="setting-title">
-              <span>Unlocked Milestones (Saved Locally &amp; Awarded Post-Run)</span>
-              <span class="setting-desc" id="milestoneCountText">0 unlocked</span>
-            </div>
-            <div class="milestone-chips" id="milestoneChips"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sound & Imported Audio Drawer -->
-    <div class="drawer" id="soundDrawer">
-      <div class="drawer-inner">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="vibe-info" id="audioStatusText">
-              Track: <strong id="vibeName">Midnight Tape</strong> &bull; <strong id="bpmDisplay">74 BPM</strong>
-            </div>
-            <div class="panel-actions">
-              <button class="btn-mini" id="waveSyncBtn">Wave Sync: On</button>
-              <button class="btn-mini" id="rerollBtn">New Beat</button>
-              <button class="btn-mini on" id="lofiToggleBtn">Lo-Fi: On</button>
-            </div>
-          </div>
-
-          <div class="sliders-grid">
-            <div class="slider-row">
-              <div class="slider-label"><span>Master Volume</span><span id="valMaster">75%</span></div>
-              <input type="range" id="volMaster" min="0" max="100" value="75" />
-            </div>
-            <div class="slider-row">
-              <div class="slider-label"><span>Warm Chords &amp; Keys</span><span id="valChords">70%</span></div>
-              <input type="range" id="volChords" min="0" max="100" value="70" />
-            </div>
-            <div class="slider-row">
-              <div class="slider-label"><span>Lo-Fi Drums &amp; Sub</span><span id="valDrums">65%</span></div>
-              <input type="range" id="volDrums" min="0" max="100" value="65" />
-            </div>
-            <div class="slider-row">
-              <div class="slider-label"><span>Vinyl Crackle</span><span id="valCrackle">40%</span></div>
-              <input type="range" id="volCrackle" min="0" max="100" value="40" />
-            </div>
-            <div class="slider-row">
-              <div class="slider-label"><span>Key Chimes (SFX)</span><span id="valSfx">55%</span></div>
-              <input type="range" id="volSfx" min="0" max="100" value="55" />
-            </div>
-            <div class="slider-row">
-              <div class="slider-label"><span>Tape Low-Pass</span><span id="valFilter">1750 Hz</span></div>
-              <input type="range" id="filterCutoff" min="450" max="4200" value="1750" />
-            </div>
-          </div>
-
-          <div class="music-import-section">
-            <div class="setting-title">
-              <span>Offline Music Import (Device Audio)</span>
               <div class="panel-actions">
-                <input type="file" id="songImportInput" accept="audio/*" multiple hidden />
-                <button class="btn-mini" id="importSongBtn">+ Import Song(s)</button>
-                <button class="btn-mini" id="customLoopBtn">Loop: On</button>
-                <button class="btn-mini" id="useLofiBtn" style="display:none;">Use Built-in Lo-Fi</button>
+                <button class="btn-mini off" id="practiceToggleBtn">Practice Mode: Off</button>
               </div>
             </div>
-            <div class="setting-desc" id="customAudioHint">
-              Import MP3, WAV, OGG, or M4A files directly from your device. Stored offline in your browser.
+            <div class="sub-section-body">
+              <div class="sub-section-inner">
+                <div class="sub-section-content">
+                  <div class="settings-grid">
+                    <div class="setting-block">
+                      <div class="setting-title">
+                        <span>Chunk Drill — Where to start</span>
+                      </div>
+                      <div class="inline-row">
+                        <input type="number" class="mini-input" id="startAtInput" min="1" max="50000" value="1" />
+                        <button class="btn-mini" id="applyStartAtBtn">Start Here</button>
+                        <button class="btn-mini" id="resetStartAtBtn">Reset to 1</button>
+                      </div>
+                      <div class="setting-desc" id="startAtDesc">
+                        Normal run starting from 3. (decimal #1)
+                      </div>
+                    </div>
+
+                    <div class="setting-block">
+                      <div class="setting-title">
+                        <span>Visual Chunking</span>
+                        <button class="btn-mini" id="chunkIndicesBtn">Indices: On</button>
+                      </div>
+                      <div class="pill-group" id="chunkPills">
+                        <button class="chunk-pill" data-chunk="1">Off</button>
+                        <button class="chunk-pill" data-chunk="2">2</button>
+                        <button class="chunk-pill" data-chunk="3">3</button>
+                        <button class="chunk-pill" data-chunk="4">4</button>
+                        <button class="chunk-pill" data-chunk="5">5</button>
+                        <button class="chunk-pill" data-chunk="6">6</button>
+                        <button class="chunk-pill" data-chunk="8">8</button>
+                        <button class="chunk-pill" data-chunk="10">10</button>
+                      </div>
+                      <div class="inline-row">
+                        <span class="setting-desc">Custom:</span>
+                        <input type="number" class="mini-input" id="customChunkInput" min="1" max="25" value="5" style="width: 68px;" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="track-list" id="trackList"></div>
+          </div>
+
+          <!-- Sub-section 2: Effects & Particles -->
+          <div class="sub-section collapsed" data-section="effects">
+            <div class="sub-section-header" role="button" tabindex="0">
+              <div class="sub-section-left">
+                <span class="sub-chevron">&#9662;</span>
+                <span class="sub-section-title">Effects &amp; Particles</span>
+                <span class="sub-summary" id="fxSummary">On &bull; 100%</span>
+              </div>
+              <div class="panel-actions">
+                <button class="btn-mini" id="previewFxBtn" title="Test Personal Best Celebration">Preview Burst</button>
+                <button class="btn-mini on" id="fxMasterToggleBtn">Master: On</button>
+              </div>
+            </div>
+            <div class="sub-section-body">
+              <div class="sub-section-inner">
+                <div class="sub-section-content">
+                  <div class="fx-master-bar">
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Master Intensity (sets all individual intensities)</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="fxMasterNum" min="0" max="200" value="100" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="fxMasterRange" min="0" max="200" value="100" />
+                    </div>
+                  </div>
+
+                  <div class="fx-grid" id="fxGrid">
+                    <div class="fx-item" id="fxCardShake">
+                      <div class="fx-item-top">
+                        <span class="fx-item-name">Screen &amp; Card Shake</span>
+                        <div class="fx-item-controls">
+                          <span class="slider-num-wrap">
+                            <input type="number" class="slider-num-input" id="fxShakeNum" min="0" max="200" value="100" />
+                            <span class="slider-unit">%</span>
+                          </span>
+                          <button class="btn-mini xs on" id="fxShakeToggle">On</button>
+                        </div>
+                      </div>
+                      <input type="range" id="fxShakeRange" min="0" max="200" value="100" />
+                    </div>
+
+                    <div class="fx-item" id="fxCardFireworks">
+                      <div class="fx-item-top">
+                        <span class="fx-item-name">PB Fireworks &amp; Confetti</span>
+                        <div class="fx-item-controls">
+                          <span class="slider-num-wrap">
+                            <input type="number" class="slider-num-input" id="fxFireworksNum" min="0" max="200" value="100" />
+                            <span class="slider-unit">%</span>
+                          </span>
+                          <button class="btn-mini xs on" id="fxFireworksToggle">On</button>
+                        </div>
+                      </div>
+                      <input type="range" id="fxFireworksRange" min="0" max="200" value="100" />
+                    </div>
+
+                    <div class="fx-item" id="fxCardShockwaves">
+                      <div class="fx-item-top">
+                        <span class="fx-item-name">Shockwaves &amp; Flash</span>
+                        <div class="fx-item-controls">
+                          <span class="slider-num-wrap">
+                            <input type="number" class="slider-num-input" id="fxShockwavesNum" min="0" max="200" value="100" />
+                            <span class="slider-unit">%</span>
+                          </span>
+                          <button class="btn-mini xs on" id="fxShockwavesToggle">On</button>
+                        </div>
+                      </div>
+                      <input type="range" id="fxShockwavesRange" min="0" max="200" value="100" />
+                    </div>
+
+                    <div class="fx-item" id="fxCardMilestones">
+                      <div class="fx-item-top">
+                        <span class="fx-item-name">Milestone Bursts</span>
+                        <div class="fx-item-controls">
+                          <span class="slider-num-wrap">
+                            <input type="number" class="slider-num-input" id="fxMilestonesNum" min="0" max="200" value="100" />
+                            <span class="slider-unit">%</span>
+                          </span>
+                          <button class="btn-mini xs on" id="fxMilestonesToggle">On</button>
+                        </div>
+                      </div>
+                      <input type="range" id="fxMilestonesRange" min="0" max="200" value="100" />
+                    </div>
+
+                    <div class="fx-item" id="fxCardKeySparks">
+                      <div class="fx-item-top">
+                        <span class="fx-item-name">Chunk &amp; Key Sparks</span>
+                        <div class="fx-item-controls">
+                          <span class="slider-num-wrap">
+                            <input type="number" class="slider-num-input" id="fxKeySparksNum" min="0" max="200" value="100" />
+                            <span class="slider-unit">%</span>
+                          </span>
+                          <button class="btn-mini xs on" id="fxKeySparksToggle">On</button>
+                        </div>
+                      </div>
+                      <input type="range" id="fxKeySparksRange" min="0" max="200" value="100" />
+                    </div>
+
+                    <div class="fx-item" id="fxCardShaderPulse">
+                      <div class="fx-item-top">
+                        <span class="fx-item-name">Shader Wave Pulse</span>
+                        <div class="fx-item-controls">
+                          <span class="slider-num-wrap">
+                            <input type="number" class="slider-num-input" id="fxShaderPulseNum" min="0" max="200" value="100" />
+                            <span class="slider-unit">%</span>
+                          </span>
+                          <button class="btn-mini xs on" id="fxShaderPulseToggle">On</button>
+                        </div>
+                      </div>
+                      <input type="range" id="fxShaderPulseRange" min="0" max="200" value="100" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-section 3: Background Waves -->
+          <div class="sub-section collapsed" data-section="waves">
+            <div class="sub-section-header" role="button" tabindex="0">
+              <div class="sub-section-left">
+                <span class="sub-chevron">&#9662;</span>
+                <span class="sub-section-title">Background Waves</span>
+                <span class="sub-summary" id="wavesSummary">On &bull; Speed 100%</span>
+              </div>
+              <div class="panel-actions">
+                <button class="btn-mini" id="waveNewSeedBtn" title="Randomize Wave Pattern">New Seed</button>
+                <button class="btn-mini on" id="waveEnabledToggleBtn">Waves: On</button>
+              </div>
+            </div>
+            <div class="sub-section-body">
+              <div class="sub-section-inner">
+                <div class="sub-section-content">
+                  <div class="sliders-grid">
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Wave Speed</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="waveSpeedNum" min="0" max="300" value="100" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="waveSpeedRange" min="0" max="300" value="100" />
+                    </div>
+
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Wave Scale / Frequency</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="waveScaleNum" min="30" max="250" value="100" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="waveScaleRange" min="30" max="250" value="100" />
+                    </div>
+
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Turbulence &amp; Warp</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="waveTurbNum" min="0" max="200" value="100" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="waveTurbRange" min="0" max="200" value="100" />
+                    </div>
+
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Ribbon Thickness</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="waveThickNum" min="20" max="250" value="100" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="waveThickRange" min="20" max="250" value="100" />
+                    </div>
+
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Glow &amp; Brightness</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="waveBrightNum" min="0" max="200" value="100" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="waveBrightRange" min="0" max="200" value="100" />
+                    </div>
+
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Music Reactivity</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="waveMusicNum" min="0" max="200" value="100" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="waveMusicRange" min="0" max="200" value="100" />
+                    </div>
+
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Hold Indent Depth</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="waveIndentNum" min="0" max="200" value="100" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="waveIndentRange" min="0" max="200" value="100" />
+                    </div>
+
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Wave Color Hue</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input wide" id="waveHueNum" min="-180" max="180" value="0" />
+                          <span class="slider-unit">&deg;</span>
+                        </span>
+                      </div>
+                      <input type="range" id="waveHueRange" min="-180" max="180" value="0" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-section 4: Sound & Music (Moved into Settings) -->
+          <div class="sub-section collapsed" data-section="sound">
+            <div class="sub-section-header" role="button" tabindex="0">
+              <div class="sub-section-left">
+                <span class="sub-chevron">&#9662;</span>
+                <span class="sub-section-title">Sound &amp; Music</span>
+                <span class="sub-summary" id="soundSummary">Lo-Fi: On &bull; 75%</span>
+              </div>
+              <div class="panel-actions">
+                <button class="btn-mini" id="rerollBtn">New Beat</button>
+                <button class="btn-mini on" id="lofiToggleBtn">Lo-Fi: On</button>
+              </div>
+            </div>
+            <div class="sub-section-body">
+              <div class="sub-section-inner">
+                <div class="sub-section-content">
+                  <div class="sound-meta-bar">
+                    <div class="vibe-info" id="audioStatusText">
+                      Track: <strong id="vibeName">Midnight Tape</strong> &bull; <strong id="bpmDisplay">74 BPM</strong>
+                    </div>
+                    <div class="panel-actions">
+                      <button class="btn-mini on" id="waveSyncBtn">Wave Sync: On</button>
+                    </div>
+                  </div>
+
+                  <div class="sliders-grid">
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Master Volume</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="numMaster" min="0" max="100" value="75" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="volMaster" min="0" max="100" value="75" />
+                    </div>
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Warm Chords &amp; Keys</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="numChords" min="0" max="100" value="70" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="volChords" min="0" max="100" value="70" />
+                    </div>
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Lo-Fi Drums &amp; Sub</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="numDrums" min="0" max="100" value="65" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="volDrums" min="0" max="100" value="65" />
+                    </div>
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Vinyl Crackle</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="numCrackle" min="0" max="100" value="40" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="volCrackle" min="0" max="100" value="40" />
+                    </div>
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Key Chimes (SFX)</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input" id="numSfx" min="0" max="100" value="55" />
+                          <span class="slider-unit">%</span>
+                        </span>
+                      </div>
+                      <input type="range" id="volSfx" min="0" max="100" value="55" />
+                    </div>
+                    <div class="slider-row">
+                      <div class="slider-label">
+                        <span>Tape Low-Pass</span>
+                        <span class="slider-num-wrap">
+                          <input type="number" class="slider-num-input wide" id="numFilter" min="450" max="4200" value="1750" />
+                          <span class="slider-unit">Hz</span>
+                        </span>
+                      </div>
+                      <input type="range" id="filterCutoff" min="450" max="4200" value="1750" />
+                    </div>
+                  </div>
+
+                  <div class="music-import-section">
+                    <div class="setting-title">
+                      <span>Offline Music Import (Device Audio)</span>
+                      <div class="panel-actions">
+                        <input type="file" id="songImportInput" accept="audio/*" multiple hidden />
+                        <button class="btn-mini" id="importSongBtn">+ Import Song(s)</button>
+                        <button class="btn-mini on" id="customLoopBtn">Loop: On</button>
+                        <button class="btn-mini" id="useLofiBtn" style="display:none;">Use Built-in Lo-Fi</button>
+                      </div>
+                    </div>
+                    <div class="setting-desc" id="customAudioHint">
+                      Import MP3, WAV, OGG, or M4A files directly from your device. Stored offline in your browser.
+                    </div>
+                    <div class="track-list" id="trackList"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-section 5: Milestones -->
+          <div class="sub-section collapsed" data-section="milestones">
+            <div class="sub-section-header" role="button" tabindex="0">
+              <div class="sub-section-left">
+                <span class="sub-chevron">&#9662;</span>
+                <span class="sub-section-title">Milestones</span>
+                <span class="sub-summary" id="milestoneCountText">0 unlocked</span>
+              </div>
+            </div>
+            <div class="sub-section-body">
+              <div class="sub-section-inner">
+                <div class="sub-section-content">
+                  <div class="milestone-chips" id="milestoneChips"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-section 6: Settings Backup & History -->
+          <div class="sub-section collapsed" data-section="backup">
+            <div class="sub-section-header" role="button" tabindex="0">
+              <div class="sub-section-left">
+                <span class="sub-chevron">&#9662;</span>
+                <span class="sub-section-title">Settings Backup &amp; History</span>
+              </div>
+              <span class="setting-desc">Ctrl+Z / Cmd+Z supported</span>
+            </div>
+            <div class="sub-section-body">
+              <div class="sub-section-inner">
+                <div class="sub-section-content">
+                  <div class="panel-actions" style="margin-bottom: 0.45rem;">
+                    <input type="file" id="importSettingsInput" accept=".json,application/json" hidden />
+                    <button class="btn-mini" id="exportSettingsBtn">Export .json</button>
+                    <button class="btn-mini" id="copySettingsBtn">Copy JSON</button>
+                    <button class="btn-mini" id="importSettingsBtn">Import .json</button>
+                    <button class="btn-mini off" id="resetSettingsBtn">Reset Defaults</button>
+                  </div>
+                  <div class="setting-desc" id="backupStatusText">
+                    Ctrl+Z / Cmd+Z undoes typed digits, settings, and drawer/subcategory collapsing.
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -899,7 +1545,7 @@
         placeholder="Type here"
         autofocus
       />
-      <button class="btn-backspace" id="backspaceBtn" title="Backspace (or press Backspace key)">&#9003;</button>
+      <button class="btn-backspace" id="backspaceBtn" title="Backspace (or Ctrl+Z)">&#9003;</button>
       <button class="btn-giveup" id="dontKnowBtn">Don't Know</button>
     </div>
 
@@ -913,6 +1559,171 @@
     const MAX_DRILL_START = 50000;
     const STORAGE_KEY = 'pi_recall_state_v5';
     const PREV_STORAGE_KEY = 'pi_recall_state_v4';
+    const FX_KEYS = ['shake', 'fireworks', 'shockwaves', 'milestones', 'keySparks', 'shaderPulse'];
+    const SECTION_KEYS = ['recall', 'effects', 'waves', 'sound', 'milestones', 'backup'];
+    const SECTION_LABELS = {
+      recall: 'Recall & Practice',
+      effects: 'Effects & Particles',
+      waves: 'Background Waves',
+      sound: 'Sound & Music',
+      milestones: 'Milestones',
+      backup: 'Settings Backup'
+    };
+
+    function createDefaultAudioSettings() {
+      return {
+        lofiEnabled: true,
+        waveSync: true,
+        audioSource: 'lofi',
+        activeTrackId: null,
+        customLoop: true,
+        master: 0.75,
+        chords: 0.70,
+        drums: 0.65,
+        crackle: 0.40,
+        sfx: 0.55,
+        cutoff: 1750
+      };
+    }
+
+    function createDefaultFxSettings(masterEnabled) {
+      const enabled = masterEnabled !== undefined ? masterEnabled : true;
+      return {
+        enabled: enabled,
+        masterIntensity: 100,
+        shake: { enabled: true, intensity: 100 },
+        fireworks: { enabled: true, intensity: 100 },
+        shockwaves: { enabled: true, intensity: 100 },
+        milestones: { enabled: true, intensity: 100 },
+        keySparks: { enabled: true, intensity: 100 },
+        shaderPulse: { enabled: true, intensity: 100 }
+      };
+    }
+
+    function createDefaultWaveSettings() {
+      return {
+        enabled: true,
+        speed: 100,
+        scale: 100,
+        turbulence: 100,
+        thickness: 100,
+        brightness: 100,
+        musicReact: 100,
+        indentDepth: 100,
+        hueShift: 0,
+        seed: [Math.random(), Math.random(), Math.random(), Math.random()]
+      };
+    }
+
+    function createDefaultCollapsedSections() {
+      return {
+        recall: false,
+        effects: true,
+        waves: true,
+        sound: true,
+        milestones: true,
+        backup: true
+      };
+    }
+
+    function createDefaultGameSettings() {
+      return {
+        practiceMode: false,
+        startAt: 1,
+        chunkSize: 5,
+        showIndices: true,
+        drawerOpen: false,
+        collapsedSections: createDefaultCollapsedSections(),
+        fx: createDefaultFxSettings(true),
+        waves: createDefaultWaveSettings()
+      };
+    }
+
+    function clampNum(val, min, max, fallback) {
+      const n = Number(val);
+      if (!Number.isFinite(n)) return fallback;
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function sanitizeFxSettings(rawFx, legacyEnabled) {
+      const def = createDefaultFxSettings(legacyEnabled !== undefined ? Boolean(legacyEnabled) : true);
+      if (!rawFx || typeof rawFx !== 'object') return def;
+
+      def.enabled = rawFx.enabled !== undefined ? Boolean(rawFx.enabled) : def.enabled;
+      def.masterIntensity = Math.round(clampNum(rawFx.masterIntensity, 0, 200, 100));
+
+      for (let i = 0; i < FX_KEYS.length; i++) {
+        const k = FX_KEYS[i];
+        if (rawFx[k] && typeof rawFx[k] === 'object') {
+          def[k].enabled = rawFx[k].enabled !== undefined ? Boolean(rawFx[k].enabled) : true;
+          def[k].intensity = Math.round(clampNum(rawFx[k].intensity, 0, 200, def.masterIntensity));
+        }
+      }
+      return def;
+    }
+
+    function sanitizeWaveSettings(rawWaves) {
+      const def = createDefaultWaveSettings();
+      if (!rawWaves || typeof rawWaves !== 'object') return def;
+      def.enabled = rawWaves.enabled !== undefined ? Boolean(rawWaves.enabled) : def.enabled;
+      def.speed = Math.round(clampNum(rawWaves.speed, 0, 300, def.speed));
+      def.scale = Math.round(clampNum(rawWaves.scale, 30, 250, def.scale));
+      def.turbulence = Math.round(clampNum(rawWaves.turbulence, 0, 200, def.turbulence));
+      def.thickness = Math.round(clampNum(rawWaves.thickness, 20, 250, def.thickness));
+      def.brightness = Math.round(clampNum(rawWaves.brightness, 0, 200, def.brightness));
+      def.musicReact = Math.round(clampNum(rawWaves.musicReact, 0, 200, def.musicReact));
+      def.indentDepth = Math.round(clampNum(rawWaves.indentDepth, 0, 200, def.indentDepth));
+      def.hueShift = Math.round(clampNum(rawWaves.hueShift, -180, 180, def.hueShift));
+      if (Array.isArray(rawWaves.seed) && rawWaves.seed.length === 4) {
+        def.seed = rawWaves.seed.map(function(v, idx) {
+          return clampNum(v, 0, 1, def.seed[idx]);
+        });
+      }
+      return def;
+    }
+
+    function sanitizeCollapsedSections(rawCollapsed) {
+      const def = createDefaultCollapsedSections();
+      if (!rawCollapsed || typeof rawCollapsed !== 'object') return def;
+      for (let i = 0; i < SECTION_KEYS.length; i++) {
+        const k = SECTION_KEYS[i];
+        if (rawCollapsed[k] !== undefined) def[k] = Boolean(rawCollapsed[k]);
+      }
+      return def;
+    }
+
+    function sanitizeAudioSettings(rawAudio, preserveActiveTrack) {
+      const def = createDefaultAudioSettings();
+      if (!rawAudio || typeof rawAudio !== 'object') return def;
+      def.lofiEnabled = rawAudio.lofiEnabled !== undefined ? Boolean(rawAudio.lofiEnabled) : def.lofiEnabled;
+      def.waveSync = rawAudio.waveSync !== undefined ? Boolean(rawAudio.waveSync) : def.waveSync;
+      def.customLoop = rawAudio.customLoop !== undefined ? Boolean(rawAudio.customLoop) : def.customLoop;
+      def.master = clampNum(rawAudio.master, 0, 1, def.master);
+      def.chords = clampNum(rawAudio.chords, 0, 1, def.chords);
+      def.drums = clampNum(rawAudio.drums, 0, 1, def.drums);
+      def.crackle = clampNum(rawAudio.crackle, 0, 1, def.crackle);
+      def.sfx = clampNum(rawAudio.sfx, 0, 1, def.sfx);
+      def.cutoff = Math.round(clampNum(rawAudio.cutoff, 450, 4200, def.cutoff));
+      if (preserveActiveTrack) {
+        def.audioSource = rawAudio.audioSource === 'custom' ? 'custom' : 'lofi';
+        def.activeTrackId = rawAudio.activeTrackId || null;
+      }
+      return def;
+    }
+
+    function sanitizeGameSettings(rawGame) {
+      const def = createDefaultGameSettings();
+      if (!rawGame || typeof rawGame !== 'object') return def;
+      def.practiceMode = rawGame.practiceMode !== undefined ? Boolean(rawGame.practiceMode) : def.practiceMode;
+      def.startAt = Math.floor(clampNum(rawGame.startAt, 1, MAX_DRILL_START, def.startAt));
+      def.chunkSize = Math.floor(clampNum(rawGame.chunkSize, 1, 25, def.chunkSize));
+      def.showIndices = rawGame.showIndices !== undefined ? Boolean(rawGame.showIndices) : def.showIndices;
+      def.drawerOpen = rawGame.drawerOpen !== undefined ? Boolean(rawGame.drawerOpen) : def.drawerOpen;
+      def.collapsedSections = sanitizeCollapsedSections(rawGame.collapsedSections);
+      def.fx = sanitizeFxSettings(rawGame.fx, rawGame.effectsEnabled);
+      def.waves = sanitizeWaveSettings(rawGame.waves);
+      return def;
+    }
 
     function loadSavedData() {
       try {
@@ -927,33 +1738,8 @@
     }
 
     const savedData = loadSavedData();
-
-    // --- Audio Settings & Music Sync State ---
-    const savedAudio = savedData.audio || {};
-    const audioSettings = {
-      lofiEnabled: savedAudio.lofiEnabled !== undefined ? savedAudio.lofiEnabled : true,
-      waveSync: savedAudio.waveSync !== undefined ? savedAudio.waveSync : true,
-      audioSource: savedAudio.audioSource || 'lofi',
-      activeTrackId: savedAudio.activeTrackId || null,
-      customLoop: savedAudio.customLoop !== undefined ? savedAudio.customLoop : true,
-      drawerOpen: savedAudio.drawerOpen !== undefined ? savedAudio.drawerOpen : false,
-      master: savedAudio.master !== undefined ? savedAudio.master : 0.75,
-      chords: savedAudio.chords !== undefined ? savedAudio.chords : 0.70,
-      drums: savedAudio.drums !== undefined ? savedAudio.drums : 0.65,
-      crackle: savedAudio.crackle !== undefined ? savedAudio.crackle : 0.40,
-      sfx: savedAudio.sfx !== undefined ? savedAudio.sfx : 0.55,
-      cutoff: savedAudio.cutoff !== undefined ? savedAudio.cutoff : 1750
-    };
-
-    // --- Non-Sound Game Settings ---
-    const savedSettings = savedData.settings || {};
-    const gameSettings = {
-      practiceMode: savedSettings.practiceMode !== undefined ? savedSettings.practiceMode : false,
-      startAt: Math.max(1, Math.min(MAX_DRILL_START, Number(savedSettings.startAt || 1))),
-      chunkSize: Math.max(1, Math.min(25, Number(savedSettings.chunkSize !== undefined ? savedSettings.chunkSize : 5))),
-      showIndices: savedSettings.showIndices !== undefined ? savedSettings.showIndices : true,
-      drawerOpen: savedSettings.drawerOpen !== undefined ? savedSettings.drawerOpen : false
-    };
+    const audioSettings = sanitizeAudioSettings(savedData.audio, true);
+    const gameSettings = sanitizeGameSettings(savedData.settings);
 
     // --- Procedural Milestones ---
     function generateMilestonesUpTo(limit) {
@@ -1062,13 +1848,562 @@
       return piStr.charCodeAt(decimalPos) - 48;
     }
 
-    // --- Reactive WebGL Wave Shader + Unified Animation/Timer Loop ---
+    // --- Pre-Allocated Zero-GC Particle, Streak, Shockwave & Flash FX Engine ---
+    function getEffectScale(key) {
+      const fx = gameSettings.fx;
+      if (!fx.enabled || !fx[key] || !fx[key].enabled) return 0;
+      return fx[key].intensity / 100;
+    }
+
+    function updateShakeCssScale() {
+      const s = getEffectScale('shake');
+      document.documentElement.style.setProperty('--shake-scale', String(s));
+    }
+    updateShakeCssScale();
+
+    const FX_PALETTE = [
+      '#38bdf8', // 0: cyan accent
+      '#4ade80', // 1: emerald success
+      '#facc15', // 2: gold PB
+      '#fbbf24', // 3: amber
+      '#f87171', // 4: coral error
+      '#f8fafc', // 5: crisp white sparkle
+      '#c084fc'  // 6: electric violet accent
+    ];
+
+    const MAX_PARTICLES = 640;
+    const pX = new Float32Array(MAX_PARTICLES);
+    const pY = new Float32Array(MAX_PARTICLES);
+    const pVX = new Float32Array(MAX_PARTICLES);
+    const pVY = new Float32Array(MAX_PARTICLES);
+    const pGravity = new Float32Array(MAX_PARTICLES);
+    const pDrag = new Float32Array(MAX_PARTICLES);
+    const pLife = new Float32Array(MAX_PARTICLES);
+    const pMaxLife = new Float32Array(MAX_PARTICLES);
+    const pSize = new Float32Array(MAX_PARTICLES);
+    const pRot = new Float32Array(MAX_PARTICLES);
+    const pVRot = new Float32Array(MAX_PARTICLES);
+    const pShape = new Uint8Array(MAX_PARTICLES);
+    const pColor = new Uint8Array(MAX_PARTICLES);
+    let activeParticles = 0;
+
+    const MAX_RINGS = 16;
+    const rX = new Float32Array(MAX_RINGS);
+    const rY = new Float32Array(MAX_RINGS);
+    const rMaxRadius = new Float32Array(MAX_RINGS);
+    const rLife = new Float32Array(MAX_RINGS);
+    const rMaxLife = new Float32Array(MAX_RINGS);
+    const rWidth = new Float32Array(MAX_RINGS);
+    const rColor = new Uint8Array(MAX_RINGS);
+    let activeRings = 0;
+
+    const MAX_BURSTS = 12;
+    const bDelay = new Float32Array(MAX_BURSTS);
+    const bX = new Float32Array(MAX_BURSTS);
+    const bY = new Float32Array(MAX_BURSTS);
+    const bScale = new Float32Array(MAX_BURSTS);
+    const bKind = new Uint8Array(MAX_BURSTS);
+    let activeBursts = 0;
+
+    let flashAlpha = 0;
+    let flashMaxAlpha = 0;
+    let flashX = 0;
+    let flashY = 0;
+    let flashRadius = 300;
+    let flashRgb = '250, 204, 21';
+
+    const fxCanvas = document.getElementById('fx-canvas');
+    const fxCtx = fxCanvas.getContext('2d', { alpha: true });
+    let fxW = window.innerWidth;
+    let fxH = window.innerHeight;
+    let fxDpr = Math.min(window.devicePixelRatio || 1, 2);
+    let fxCanvasDirty = false;
+
+    function resizeFxCanvas() {
+      fxDpr = Math.min(window.devicePixelRatio || 1, 2);
+      fxW = window.innerWidth;
+      fxH = window.innerHeight;
+      fxCanvas.width = Math.floor(fxW * fxDpr);
+      fxCanvas.height = Math.floor(fxH * fxDpr);
+      if (fxCtx) {
+        fxCtx.setTransform(fxDpr, 0, 0, fxDpr, 0, 0);
+      }
+    }
+    window.addEventListener('resize', resizeFxCanvas);
+    resizeFxCanvas();
+
+    function spawnParticle(x, y, vx, vy, gravity, drag, life, size, shape, colorIdx) {
+      if (!gameSettings.fx.enabled || activeParticles >= MAX_PARTICLES) return;
+      const i = activeParticles++;
+      pX[i] = x;
+      pY[i] = y;
+      pVX[i] = vx;
+      pVY[i] = vy;
+      pGravity[i] = gravity;
+      pDrag[i] = drag;
+      pLife[i] = life;
+      pMaxLife[i] = life;
+      pSize[i] = size;
+      pRot[i] = Math.random() * 6.28318;
+      pVRot[i] = (Math.random() - 0.5) * 11.0;
+      pShape[i] = shape;
+      pColor[i] = colorIdx;
+    }
+
+    function spawnRing(x, y, maxRadius, life, width, colorIdx) {
+      if (!gameSettings.fx.enabled || activeRings >= MAX_RINGS) return;
+      const i = activeRings++;
+      rX[i] = x;
+      rY[i] = y;
+      rMaxRadius[i] = maxRadius;
+      rLife[i] = life;
+      rMaxLife[i] = life;
+      rWidth[i] = width;
+      rColor[i] = colorIdx;
+    }
+
+    function scheduleBurst(delay, x, y, scale, kind) {
+      if (!gameSettings.fx.enabled || activeBursts >= MAX_BURSTS) return;
+      const i = activeBursts++;
+      bDelay[i] = delay;
+      bX[i] = x;
+      bY[i] = y;
+      bScale[i] = scale;
+      bKind[i] = kind;
+    }
+
+    function triggerFlash(x, y, radius, rgb, intensityScale) {
+      if (intensityScale <= 0) return;
+      flashX = x;
+      flashY = y;
+      flashRadius = radius * Math.min(1.6, 0.8 + intensityScale * 0.4);
+      flashRgb = rgb;
+      flashMaxAlpha = Math.min(0.48, 0.22 * intensityScale);
+      flashAlpha = flashMaxAlpha;
+    }
+
+    function emitFireworkBurst(x, y, scale, kind) {
+      const count = Math.min(130, Math.max(12, Math.round(48 * scale)));
+      const palette = kind === 0 ? [2, 2, 0, 5, 1, 6] : [1, 1, 0, 5, 2];
+      const speedMult = 0.75 + scale * 0.42;
+
+      for (let i = 0; i < count; i++) {
+        const ang = (i / count) * 6.28318 + (Math.random() - 0.5) * 0.35;
+        const spd = (130 + Math.random() * 340) * speedMult;
+        const mod = i % 10;
+        const shape = mod === 0 ? 2 : (mod <= 3 ? 3 : (mod <= 6 ? 1 : 0));
+        spawnParticle(
+          x, y,
+          Math.cos(ang) * spd, Math.sin(ang) * spd - 45,
+          290, 0.96, 0.85 + Math.random() * 0.65,
+          shape === 1 ? 4.2 + Math.random() * 2.5 : (shape === 3 ? 2.1 + Math.random() * 1.4 : 2.6 + Math.random() * 2.2),
+          shape, palette[i % palette.length]
+        );
+      }
+
+      const swScale = getEffectScale('shockwaves');
+      if (swScale > 0) {
+        spawnRing(x, y, (140 + Math.random() * 70) * Math.min(1.7, 0.7 + swScale * 0.55), 0.62, 3.2 * Math.min(1.8, swScale), kind === 0 ? 2 : 1);
+        triggerFlash(x, y, 280, kind === 0 ? '250, 204, 21' : '74, 222, 128', swScale * 0.75);
+      }
+    }
+
+    function clearAllFx() {
+      activeParticles = 0;
+      activeRings = 0;
+      activeBursts = 0;
+      flashAlpha = 0;
+      if (fxCanvasDirty && fxCtx) {
+        fxCtx.clearRect(0, 0, fxW, fxH);
+        fxCanvasDirty = false;
+      }
+    }
+
+    function stepAndRenderFx(dt) {
+      if (!fxCtx) return;
+
+      for (let i = activeBursts - 1; i >= 0; i--) {
+        bDelay[i] -= dt;
+        if (bDelay[i] <= 0) {
+          const bx = bX[i], by = bY[i], bs = bScale[i], bk = bKind[i];
+          const last = --activeBursts;
+          if (i !== last) {
+            bDelay[i] = bDelay[last];
+            bX[i] = bX[last];
+            bY[i] = bY[last];
+            bScale[i] = bScale[last];
+            bKind[i] = bKind[last];
+          }
+          emitFireworkBurst(bx, by, bs, bk);
+        }
+      }
+
+      if (activeParticles === 0 && activeRings === 0 && flashAlpha <= 0.004) {
+        if (fxCanvasDirty) {
+          fxCtx.clearRect(0, 0, fxW, fxH);
+          fxCanvasDirty = false;
+        }
+        return;
+      }
+
+      fxCanvasDirty = true;
+      fxCtx.clearRect(0, 0, fxW, fxH);
+
+      if (flashAlpha > 0.004) {
+        const grad = fxCtx.createRadialGradient(flashX, flashY, 0, flashX, flashY, flashRadius);
+        grad.addColorStop(0, 'rgba(' + flashRgb + ', ' + flashAlpha.toFixed(3) + ')');
+        grad.addColorStop(0.45, 'rgba(' + flashRgb + ', ' + (flashAlpha * 0.38).toFixed(3) + ')');
+        grad.addColorStop(1, 'rgba(' + flashRgb + ', 0)');
+        fxCtx.fillStyle = grad;
+        fxCtx.fillRect(0, 0, fxW, fxH);
+        flashAlpha *= Math.pow(0.06, dt);
+      }
+
+      for (let i = activeRings - 1; i >= 0; i--) {
+        rLife[i] -= dt;
+        if (rLife[i] <= 0) {
+          const last = --activeRings;
+          if (i !== last) {
+            rX[i] = rX[last];
+            rY[i] = rY[last];
+            rMaxRadius[i] = rMaxRadius[last];
+            rLife[i] = rLife[last];
+            rMaxLife[i] = rMaxLife[last];
+            rWidth[i] = rWidth[last];
+            rColor[i] = rColor[last];
+          }
+          continue;
+        }
+        const progress = 1.0 - (rLife[i] / rMaxLife[i]);
+        const easeOut = 1.0 - Math.pow(1.0 - progress, 3.0);
+        const radius = 12 + easeOut * rMaxRadius[i];
+        const alpha = (1.0 - progress) * 0.72;
+
+        fxCtx.globalAlpha = alpha;
+        fxCtx.strokeStyle = FX_PALETTE[rColor[i]];
+        fxCtx.lineWidth = Math.max(1.0, (1.0 - progress) * rWidth[i]);
+        fxCtx.beginPath();
+        fxCtx.arc(rX[i], rY[i], radius, 0, 6.2831853);
+        fxCtx.stroke();
+      }
+
+      let fontSet = false;
+      fxCtx.lineCap = 'round';
+
+      for (let i = activeParticles - 1; i >= 0; i--) {
+        pLife[i] -= dt;
+        if (pLife[i] <= 0) {
+          const last = --activeParticles;
+          if (i !== last) {
+            pX[i] = pX[last];
+            pY[i] = pY[last];
+            pVX[i] = pVX[last];
+            pVY[i] = pVY[last];
+            pGravity[i] = pGravity[last];
+            pDrag[i] = pDrag[last];
+            pLife[i] = pLife[last];
+            pMaxLife[i] = pMaxLife[last];
+            pSize[i] = pSize[last];
+            pRot[i] = pRot[last];
+            pVRot[i] = pVRot[last];
+            pShape[i] = pShape[last];
+            pColor[i] = pColor[last];
+          }
+          continue;
+        }
+
+        const damp = Math.pow(pDrag[i], dt * 60.0);
+        pVX[i] *= damp;
+        pVY[i] = pVY[i] * damp + pGravity[i] * dt;
+        pX[i] += pVX[i] * dt;
+        pY[i] += pVY[i] * dt;
+        pRot[i] += pVRot[i] * dt;
+
+        const t = pLife[i] / pMaxLife[i];
+        const alpha = t < 0.28 ? t * 3.57 : 1.0;
+        const size = pSize[i] * (0.45 + 0.55 * t);
+        const color = FX_PALETTE[pColor[i]];
+
+        fxCtx.globalAlpha = alpha;
+        const shape = pShape[i];
+
+        if (shape === 0) {
+          fxCtx.fillStyle = color;
+          fxCtx.beginPath();
+          fxCtx.arc(pX[i], pY[i], size, 0, 6.2831853);
+          fxCtx.fill();
+        } else if (shape === 1) {
+          fxCtx.fillStyle = color;
+          fxCtx.save();
+          fxCtx.translate(pX[i], pY[i]);
+          fxCtx.rotate(pRot[i]);
+          fxCtx.fillRect(-size, -size * 0.42, size * 2.0, size * 0.84);
+          fxCtx.restore();
+        } else if (shape === 3) {
+          fxCtx.strokeStyle = color;
+          fxCtx.lineWidth = size;
+          fxCtx.beginPath();
+          fxCtx.moveTo(pX[i], pY[i]);
+          fxCtx.lineTo(pX[i] - pVX[i] * 0.032, pY[i] - pVY[i] * 0.032);
+          fxCtx.stroke();
+        } else {
+          if (!fontSet) {
+            fxCtx.font = '800 18px "Segoe UI", system-ui, sans-serif';
+            fxCtx.textAlign = 'center';
+            fxCtx.textBaseline = 'middle';
+            fontSet = true;
+          }
+          fxCtx.fillStyle = color;
+          fxCtx.save();
+          fxCtx.translate(pX[i], pY[i]);
+          fxCtx.rotate(pRot[i] * 0.25);
+          fxCtx.fillText('π', 0, 0);
+          fxCtx.restore();
+        }
+      }
+
+      fxCtx.globalAlpha = 1.0;
+    }
+
+    function getElCenter(el) {
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width * 0.5, y: r.top + r.height * 0.5, rect: r };
+    }
+
+    function triggerChunkAccentFx() {
+      const scale = getEffectScale('keySparks');
+      if (scale <= 0) return;
+      const c = getElCenter(scoreEl);
+      const count = Math.min(24, Math.max(2, Math.round(9 * scale)));
+      for (let i = 0; i < count; i++) {
+        const ang = -Math.PI * 0.9 + Math.random() * Math.PI * 0.8;
+        const spd = (55 + Math.random() * 115) * (0.7 + scale * 0.45);
+        const shape = i % 3 === 0 ? 3 : 0;
+        spawnParticle(
+          c.x, c.y,
+          Math.cos(ang) * spd, Math.sin(ang) * spd,
+          150, 0.95, 0.42 + Math.random() * 0.22,
+          (1.8 + Math.random() * 1.5) * Math.min(1.5, 0.75 + scale * 0.35),
+          shape, i % 2 === 0 ? 1 : 0
+        );
+      }
+    }
+
+    function triggerKeyMicroSpark() {
+      const scale = getEffectScale('keySparks');
+      if (scale < 0.4) return;
+      const c = getElCenter(scoreEl);
+      const count = scale >= 1.3 ? 3 : (scale >= 0.8 ? 2 : 1);
+      for (let i = 0; i < count; i++) {
+        const ang = -Math.PI * 0.8 + Math.random() * Math.PI * 0.6;
+        const spd = (35 + Math.random() * 65) * scale;
+        spawnParticle(
+          c.x + (Math.random() - 0.5) * 14, c.y,
+          Math.cos(ang) * spd, Math.sin(ang) * spd,
+          110, 0.94, 0.28 + Math.random() * 0.14,
+          1.7 + Math.random() * 1.0,
+          0, 1
+        );
+      }
+    }
+
+    function triggerPracticeErrorFx() {
+      const scale = getEffectScale('keySparks');
+      if (scale <= 0) return;
+      const c = getElCenter(digitInput);
+      const count = Math.min(36, Math.max(4, Math.round(16 * scale)));
+      for (let i = 0; i < count; i++) {
+        const x = c.rect.left + Math.random() * c.rect.width;
+        const y = c.rect.top + (Math.random() > 0.5 ? 2 : c.rect.height - 2);
+        const vx = (Math.random() - 0.5) * 180 * (0.7 + scale * 0.4);
+        const vy = (-45 - Math.random() * 100) * (0.7 + scale * 0.4);
+        spawnParticle(x, y, vx, vy, 260, 0.94, 0.45 + Math.random() * 0.24, 2.2 + Math.random() * 1.6, i % 3 === 0 ? 3 : 0, 4);
+      }
+    }
+
+    function triggerPostRunFx(isNewBest, hasMilestones, reason) {
+      if (!gameSettings.fx.enabled) return;
+
+      const fwScale = getEffectScale('fireworks');
+      const swScale = getEffectScale('shockwaves');
+      const msScale = getEffectScale('milestones');
+
+      if (isNewBest) {
+        const bestPos = getElCenter(bestEl);
+        const cardPos = getElCenter(mainContainer);
+
+        if (swScale > 0) {
+          const rScale = Math.min(1.85, 0.65 + swScale * 0.55);
+          spawnRing(bestPos.x, bestPos.y, 210 * rScale, 0.68, 4.5 * Math.min(1.7, swScale), 2);
+          spawnRing(bestPos.x, bestPos.y, 130 * rScale, 0.5, 3.2 * Math.min(1.7, swScale), 5);
+          spawnRing(cardPos.x, cardPos.y, Math.min(cardPos.rect.width * 0.68, 340) * rScale, 0.85, 4.0 * Math.min(1.7, swScale), 0);
+          triggerFlash(bestPos.x, bestPos.y, Math.max(fxW, fxH) * 0.55, '250, 204, 21', swScale);
+        }
+
+        if (fwScale > 0) {
+          const pbPalette = [2, 2, 0, 1, 5, 6];
+          const bestCount = Math.min(140, Math.max(16, Math.round(72 * fwScale)));
+          const cornerCount = Math.min(120, Math.max(14, Math.round(64 * fwScale)));
+          const velBoost = 0.72 + fwScale * 0.42;
+
+          for (let i = 0; i < bestCount; i++) {
+            const ang = Math.random() * 6.28318;
+            const spd = (140 + Math.random() * 380) * velBoost;
+            const mod = i % 10;
+            const shape = mod === 0 ? 2 : (mod <= 3 ? 3 : (mod <= 6 ? 1 : 0));
+            spawnParticle(
+              bestPos.x, bestPos.y,
+              Math.cos(ang) * spd, Math.sin(ang) * spd - 75,
+              310, 0.965, 0.95 + Math.random() * 0.75,
+              shape === 1 ? 4.4 + Math.random() * 2.4 : (shape === 3 ? 2.2 + Math.random() * 1.4 : 2.8 + Math.random() * 2.2),
+              shape, pbPalette[i % pbPalette.length]
+            );
+          }
+
+          const leftX = cardPos.rect.left + 26;
+          const rightX = cardPos.rect.right - 26;
+          const topY = cardPos.rect.top + 26;
+          for (let i = 0; i < cornerCount; i++) {
+            const fromLeft = (i & 1) === 0;
+            const baseAng = fromLeft ? -Math.PI * 0.34 : -Math.PI * 0.66;
+            const ang = baseAng + (Math.random() - 0.5) * 0.95;
+            const spd = (200 + Math.random() * 340) * velBoost;
+            const mod = i % 9;
+            const shape = mod === 0 ? 2 : (mod <= 3 ? 3 : (mod <= 6 ? 1 : 0));
+            spawnParticle(
+              fromLeft ? leftX : rightX, topY,
+              Math.cos(ang) * spd, Math.sin(ang) * spd,
+              340, 0.97, 1.0 + Math.random() * 0.75,
+              shape === 1 ? 4.2 + Math.random() * 2.4 : 2.6 + Math.random() * 2.0,
+              shape, pbPalette[i % pbPalette.length]
+            );
+          }
+
+          const padX = Math.max(80, cardPos.rect.width * 0.35);
+          scheduleBurst(0.20, Math.max(70, cardPos.x - padX), Math.max(80, cardPos.rect.top + 35), fwScale * 0.9, 0);
+          scheduleBurst(0.40, Math.min(fxW - 70, cardPos.x + padX), Math.max(80, cardPos.rect.top + 55), fwScale * 0.95, 0);
+          if (fwScale >= 1.15) {
+            scheduleBurst(0.62, cardPos.x, Math.max(60, cardPos.rect.top - 15), fwScale * 1.1, 0);
+          }
+        }
+      } else if (hasMilestones && msScale > 0) {
+        const cardPos = getElCenter(mainContainer);
+        if (swScale > 0) {
+          spawnRing(cardPos.x, cardPos.y, 240 * Math.min(1.7, 0.7 + swScale * 0.5), 0.72, 3.6 * Math.min(1.6, swScale), 1);
+          triggerFlash(cardPos.x, cardPos.rect.top + 45, 360, '74, 222, 128', swScale * 0.8);
+        }
+        emitFireworkBurst(cardPos.x, cardPos.rect.top + 45, msScale * 1.05, 1);
+        if (msScale >= 1.15) {
+          scheduleBurst(0.24, cardPos.x - 120, cardPos.rect.top + 30, msScale * 0.75, 1);
+          scheduleBurst(0.42, cardPos.x + 120, cardPos.rect.top + 30, msScale * 0.75, 1);
+        }
+      } else if (reason === 'wrong') {
+        const box = getElCenter(displayBox);
+        if (swScale > 0) {
+          spawnRing(box.x, box.y, 180 * Math.min(1.6, 0.7 + swScale * 0.45), 0.52, 3.0 * Math.min(1.6, swScale), 4);
+          triggerFlash(box.x, box.y, 320, '248, 113, 113', swScale * 0.65);
+        }
+        const errScale = Math.max(fwScale, msScale, getEffectScale('keySparks'));
+        if (errScale > 0) {
+          const count = Math.min(72, Math.max(12, Math.round(36 * errScale)));
+          for (let i = 0; i < count; i++) {
+            const x = box.rect.left + Math.random() * box.rect.width;
+            const y = box.rect.bottom - 8;
+            const shape = i % 3 === 0 ? 3 : 0;
+            spawnParticle(
+              x, y,
+              (Math.random() - 0.5) * 230 * (0.7 + errScale * 0.4),
+              (-55 - Math.random() * 145) * (0.7 + errScale * 0.4),
+              320, 0.95, 0.55 + Math.random() * 0.35,
+              2.4 + Math.random() * 1.8,
+              shape, 4
+            );
+          }
+        }
+      } else if (reason === 'giveup') {
+        const box = getElCenter(displayBox);
+        const emberScale = Math.max(getEffectScale('keySparks'), fwScale * 0.7);
+        if (emberScale > 0) {
+          const count = Math.min(48, Math.max(8, Math.round(24 * emberScale)));
+          for (let i = 0; i < count; i++) {
+            const x = box.rect.left + Math.random() * box.rect.width;
+            const y = box.rect.bottom - 6;
+            spawnParticle(
+              x, y,
+              (Math.random() - 0.5) * 130 * (0.7 + emberScale * 0.35),
+              (-50 - Math.random() * 90) * (0.7 + emberScale * 0.35),
+              160, 0.96, 0.6 + Math.random() * 0.35,
+              2.2 + Math.random() * 1.6,
+              i % 4 === 0 ? 3 : 0, 3
+            );
+          }
+        }
+      }
+    }
+
+    function triggerPeekFx() {
+      const scale = getEffectScale('keySparks');
+      if (scale <= 0) return;
+      const box = getElCenter(displayBox);
+      const count = Math.min(20, Math.max(4, Math.round(10 * scale)));
+      for (let i = 0; i < count; i++) {
+        spawnParticle(
+          box.rect.right - 24, box.rect.bottom - 18,
+          (-50 - Math.random() * 90) * (0.7 + scale * 0.35),
+          (-40 - Math.random() * 70) * (0.7 + scale * 0.35),
+          160, 0.95, 0.48 + Math.random() * 0.25,
+          2.1 + Math.random() * 1.5,
+          i % 3 === 0 ? 3 : 0, 0
+        );
+      }
+    }
+
+    // --- Reactive WebGL Wave Shader + Elastic Spring Indent + Unified Loop ---
     let shaderState = 0;
     let greenPulse = 0.0;
     let errorPulse = 0.0;
-    const waveSeed = [Math.random(), Math.random(), Math.random(), Math.random()];
 
-    const mouseState = { x: 0.0, y: 0.0, holding: false, holdMix: 0.0 };
+    function rotateRgbHue(rgb, deg) {
+      const rad = (deg * Math.PI) / 180;
+      const c = Math.cos(rad);
+      const s = Math.sin(rad);
+      const k = 0.5773502691896257;
+      const r = rgb[0], g = rgb[1], b = rgb[2];
+      const dot = k * (r + g + b);
+      const cx = k * (b - g);
+      const cy = k * (r - b);
+      const cz = k * (g - r);
+      return [
+        Math.max(0, Math.min(1, r * c + cx * s + k * dot * (1 - c))),
+        Math.max(0, Math.min(1, g * c + cy * s + k * dot * (1 - c))),
+        Math.max(0, Math.min(1, b * c + cz * s + k * dot * (1 - c)))
+      ];
+    }
+
+    const baseIdleTint = [0.22, 0.74, 0.97];
+    const targetTints = [
+      rotateRgbHue(baseIdleTint, gameSettings.waves.hueShift), // 0: idle (hue-shifted)
+      [0.97, 0.44, 0.44], // 1: red loss
+      [0.98, 0.75, 0.14], // 2: amber giveup
+      [0.98, 0.80, 0.08]  // 3: gold PB
+    ];
+
+    function refreshIdleHueTint() {
+      targetTints[0] = rotateRgbHue(baseIdleTint, gameSettings.waves.hueShift);
+    }
+
+    const mouseState = {
+      x: 0.0,
+      y: 0.0,
+      smoothX: 0.0,
+      smoothY: 0.0,
+      holding: false,
+      holdDuration: 0.0,
+      springPos: 0.0,
+      springVel: 0.0,
+      releasePulse: 0.0,
+      releaseAge: 0.0
+    };
 
     let musicAnalyser = null;
     let freqData = null;
@@ -1108,8 +2443,15 @@
         'uniform vec4 u_seed;',
         'uniform vec2 u_mouse;',
         'uniform float u_mouseHold;',
+        'uniform float u_releasePulse;',
+        'uniform float u_releaseAge;',
         'uniform float u_musicBass;',
         'uniform float u_musicMid;',
+        'uniform float u_waveScale;',
+        'uniform float u_waveTurb;',
+        'uniform float u_waveThick;',
+        'uniform float u_waveBright;',
+        'uniform float u_waveMusicScale;',
         'void main() {',
         '  vec2 uv = gl_FragCoord.xy / u_res.xy;',
         '  vec2 p = uv * 2.0 - 1.0;',
@@ -1117,36 +2459,48 @@
         '  vec2 toPixel = p - u_mouse;',
         '  float mDist = length(toPixel);',
         '  vec2 dir = mDist > 0.0005 ? toPixel / mDist : vec2(0.0, 1.0);',
-        '  float push = u_mouseHold * 0.65 * exp(-mDist * 1.3);',
-        '  float warpedR = max(0.0, mDist - push);',
-        '  vec2 sampleP = u_mouse + dir * warpedR;',
-        '  float mouseEyeFade = 1.0 - u_mouseHold * 0.78 * smoothstep(0.4, 0.0, warpedR);',
-        '  float holdRipple = sin(mDist * 11.0 - u_rawTime * 7.5) * exp(-mDist * 1.55) * u_mouseHold * 0.28;',
+        '  float r2 = mDist * mDist;',
+        '  float well = exp(-r2 * 4.4);',
+        '  float indentAmt = u_mouseHold;',
+        '  float radialScale = 1.0 + indentAmt * 1.18 * well;',
+        '  float holdRipple = sin(mDist * 16.0 - u_rawTime * 8.5) * exp(-mDist * 2.2) * abs(indentAmt) * 0.22;',
+        '  float relDist = mDist - u_releaseAge * 1.65;',
+        '  float releaseWave = sin(relDist * 19.0) * exp(-abs(relDist) * 5.8) * u_releasePulse * 0.30;',
+        '  float releaseRim = exp(-relDist * relDist * 42.0) * u_releasePulse * 0.42;',
+        '  vec2 sampleP = u_mouse + dir * (mDist * radialScale) + dir * (holdRipple * 0.07 + releaseWave * 0.08);',
+        '  float pitShadow = 1.0 - clamp(indentAmt, 0.0, 1.8) * 0.52 * exp(-r2 * 7.2);',
+        '  float rimGlow = max(0.0, indentAmt) * exp(-pow(mDist - 0.31, 2.0) * 24.0) * 0.42;',
         '  float dist = length(sampleP);',
         '  float ang = u_seed.x * 6.2831853;',
         '  float ca = cos(ang);',
         '  float sa = sin(ang);',
-        '  vec2 rp = mat2(ca, -sa, sa, ca) * sampleP;',
+        '  vec2 rp = mat2(ca, -sa, sa, ca) * (sampleP * u_waveScale);',
         '  float freq1 = 1.6 + u_seed.y * 2.1;',
         '  float freq2 = 1.7 + u_seed.z * 2.2;',
         '  float phase = u_seed.w * 6.2831853;',
-        '  float ripple = sin(dist * 9.0 - u_rawTime * 6.0) * (u_pulse * 0.14 + u_musicBass * 0.16) + holdRipple;',
+        '  float cPulse = min(u_pulse, 2.2);',
+        '  float cErr = min(u_errorPulse, 2.2);',
+        '  float mBass = u_musicBass * u_waveMusicScale;',
+        '  float mMid = u_musicMid * u_waveMusicScale;',
+        '  float ripple = sin(dist * 9.0 - u_rawTime * 6.0) * (cPulse * 0.15 + mBass * 0.16) + holdRipple + releaseWave;',
         '  float t = u_time * (0.38 + u_seed.y * 0.22);',
-        '  float w1 = sin(rp.x * freq1 + t + phase + cos(rp.y * (freq2 * 0.85) - t * 0.8 + phase) + ripple);',
-        '  float w2 = cos(rp.y * freq2 - t * 1.05 - phase + sin(rp.x * (freq1 * 0.8) + t) - ripple);',
+        '  float turb = u_waveTurb;',
+        '  float w1 = sin(rp.x * freq1 + t + phase + cos(rp.y * (freq2 * 0.85) - t * 0.8 + phase) * turb + ripple);',
+        '  float w2 = cos(rp.y * freq2 - t * 1.05 - phase + sin(rp.x * (freq1 * 0.8) + t) * turb - ripple);',
         '  float wave = (w1 + w2) * 0.5;',
-        '  float ribbonThick = 0.11 + u_pulse * 0.05 + u_musicMid * 0.055;',
+        '  float ribbonThick = (0.11 * u_waveThick) + cPulse * 0.05 + mMid * 0.055;',
         '  float ribbon1 = smoothstep(ribbonThick, 0.0, abs(wave - rp.y * 0.6));',
-        '  float ribbon2 = smoothstep(ribbonThick + 0.06, 0.0, abs(sin(rp.x * (freq1 * 0.65) - t * 0.9 + phase) * 0.45 - rp.y));',
-        '  float glow = smoothstep(0.72 + u_musicBass * 0.18, 0.0, abs(wave - rp.y * 0.5));',
+        '  float ribbon2 = smoothstep(ribbonThick + 0.06 * u_waveThick, 0.0, abs(sin(rp.x * (freq1 * 0.65) - t * 0.9 + phase) * 0.45 * turb - rp.y));',
+        '  float glow = smoothstep(0.72 + mBass * 0.18, 0.0, abs(wave - rp.y * 0.5));',
         '  vec3 base = vec3(0.05, 0.08, 0.15);',
         '  vec3 greenColor = vec3(0.29, 0.87, 0.50);',
         '  vec3 redColor = vec3(0.97, 0.44, 0.44);',
-        '  vec3 activeColor = mix(u_tint, greenColor, u_pulse);',
-        '  activeColor = mix(activeColor, redColor, u_errorPulse);',
-        '  float boost = 1.0 + u_pulse * 0.85 + u_errorPulse * 0.55 + u_musicBass * 0.95;',
+        '  vec3 activeColor = mix(u_tint, greenColor, clamp(cPulse, 0.0, 1.0));',
+        '  activeColor = mix(activeColor, redColor, clamp(cErr, 0.0, 1.0));',
+        '  float boost = (1.0 + cPulse * 0.72 + cErr * 0.55 + mBass * 0.95) * u_waveBright;',
         '  vec3 waveLight = activeColor * glow * 0.25 * boost + activeColor * (ribbon1 * 0.48 + ribbon2 * 0.28) * boost;',
-        '  vec3 color = base + waveLight * mouseEyeFade;',
+        '  vec3 indentLight = activeColor * (rimGlow + releaseRim) * (0.65 + 0.35 * u_waveBright);',
+        '  vec3 color = base + waveLight * pitShadow + indentLight;',
         '  gl_FragColor = vec4(color, 1.0);',
         '}'
       ].join('\n');
@@ -1181,8 +2535,15 @@
       const seedLoc = gl.getUniformLocation(prog, 'u_seed');
       const mouseLoc = gl.getUniformLocation(prog, 'u_mouse');
       const mouseHoldLoc = gl.getUniformLocation(prog, 'u_mouseHold');
+      const releasePulseLoc = gl.getUniformLocation(prog, 'u_releasePulse');
+      const releaseAgeLoc = gl.getUniformLocation(prog, 'u_releaseAge');
       const musicBassLoc = gl.getUniformLocation(prog, 'u_musicBass');
       const musicMidLoc = gl.getUniformLocation(prog, 'u_musicMid');
+      const waveScaleLoc = gl.getUniformLocation(prog, 'u_waveScale');
+      const waveTurbLoc = gl.getUniformLocation(prog, 'u_waveTurb');
+      const waveThickLoc = gl.getUniformLocation(prog, 'u_waveThick');
+      const waveBrightLoc = gl.getUniformLocation(prog, 'u_waveBright');
+      const waveMusicScaleLoc = gl.getUniformLocation(prog, 'u_waveMusicScale');
 
       function resize() {
         canvas.width = window.innerWidth;
@@ -1192,32 +2553,40 @@
       window.addEventListener('resize', resize);
       resize();
 
-      function updateMouseCoords(e) {
+      function updateMouseCoords(e, snapSmooth) {
         const w = window.innerWidth || 1;
         const h = window.innerHeight || 1;
         const aspect = w / h;
         mouseState.x = ((e.clientX / w) * 2.0 - 1.0) * aspect;
         mouseState.y = (1.0 - e.clientY / h) * 2.0 - 1.0;
+        if (snapSmooth) {
+          mouseState.smoothX = mouseState.x;
+          mouseState.smoothY = mouseState.y;
+        }
       }
 
       window.addEventListener('pointerdown', function(e) {
-        if (e.target && e.target.closest('input, button, label')) return;
-        updateMouseCoords(e);
+        if (e.target && e.target.closest('input, button, label, select, .track-item, .chunk-pill, .sub-section-header')) return;
+        updateMouseCoords(e, true);
         mouseState.holding = true;
+        mouseState.holdDuration = 0.0;
       });
       window.addEventListener('pointermove', function(e) {
-        if (mouseState.holding) updateMouseCoords(e);
+        if (mouseState.holding) updateMouseCoords(e, false);
       });
-      window.addEventListener('pointerup', function() { mouseState.holding = false; });
-      window.addEventListener('pointercancel', function() { mouseState.holding = false; });
-      window.addEventListener('blur', function() { mouseState.holding = false; });
+      function releaseHold() {
+        if (mouseState.holding && gameSettings.waves.enabled && gameSettings.waves.indentDepth > 0) {
+          const strength = Math.min(1.3, 0.45 + mouseState.holdDuration * 2.2) * (gameSettings.waves.indentDepth / 100);
+          mouseState.releasePulse = Math.max(mouseState.releasePulse, Math.min(1.5, strength));
+          mouseState.releaseAge = 0.0;
+        }
+        mouseState.holding = false;
+      }
+      window.addEventListener('pointerup', releaseHold);
+      window.addEventListener('pointercancel', releaseHold);
+      window.addEventListener('blur', releaseHold);
 
-      const curTint = [0.22, 0.74, 0.97];
-      const targetTints = [
-        [0.22, 0.74, 0.97],
-        [0.97, 0.44, 0.44],
-        [0.98, 0.75, 0.14]
-      ];
+      const curTint = [targetTints[0][0], targetTints[0][1], targetTints[0][2]];
 
       let lastRenderTime = performance.now();
       let waveClock = 0.0;
@@ -1226,7 +2595,6 @@
         const dt = Math.min(0.1, Math.max(0.0, (now - lastRenderTime) * 0.001));
         lastRenderTime = now;
 
-        // Tick run timer in unified rAF loop (only touches DOM when text changes)
         if (timerRunning && !gameOver) {
           if (lastTimerNow !== null) {
             elapsedMs += (now - lastTimerNow);
@@ -1237,51 +2605,93 @@
           lastTimerNow = null;
         }
 
-        const target = targetTints[shaderState];
-        for (let i = 0; i < 3; i++) {
-          curTint[i] += (target[i] - curTint[i]) * 0.08;
-        }
-
         greenPulse *= 0.92;
         errorPulse *= 0.90;
-        const targetHold = mouseState.holding ? 1.0 : 0.0;
-        mouseState.holdMix += (targetHold - mouseState.holdMix) * (mouseState.holding ? 0.14 : 0.08);
 
-        const musicActive = (audioSettings.audioSource === 'lofi' && audioSettings.lofiEnabled) ||
-          (audioSettings.audioSource === 'custom' && !customAudioEl.paused);
+        if (gameSettings.waves.enabled) {
+          const target = targetTints[shaderState];
+          for (let i = 0; i < 3; i++) {
+            curTint[i] += (target[i] - curTint[i]) * 0.09;
+          }
 
-        if (audioSettings.waveSync && musicActive && musicAnalyser && freqData && audioCtx && audioCtx.state === 'running') {
-          musicAnalyser.getByteFrequencyData(freqData);
-          let lowSum = 0;
-          let midSum = 0;
-          const lowEnd = Math.min(5, freqData.length);
-          const midEnd = Math.min(20, freqData.length);
-          for (let i = 0; i < lowEnd; i++) lowSum += freqData[i];
-          for (let i = lowEnd; i < midEnd; i++) midSum += freqData[i];
-          const rawBass = lowSum / (lowEnd * 255);
-          const rawMid = midSum / (Math.max(1, midEnd - lowEnd) * 255);
+          // Smooth pointer follow when dragging
+          const followRate = 1.0 - Math.exp(-24.0 * dt);
+          mouseState.smoothX += (mouseState.x - mouseState.smoothX) * followRate;
+          mouseState.smoothY += (mouseState.y - mouseState.smoothY) * followRate;
 
-          smoothedBass += (rawBass - smoothedBass) * 0.28;
-          smoothedMid += (rawMid - smoothedMid) * 0.22;
+          if (mouseState.holding) {
+            mouseState.holdDuration += dt;
+          }
+
+          // Elastic damped spring for click-and-hold indent
+          const targetHold = mouseState.holding ? 1.0 : 0.0;
+          const stiffness = mouseState.holding ? 145.0 : 195.0;
+          const damping = mouseState.holding ? 16.5 : 10.5;
+          const force = (targetHold - mouseState.springPos) * stiffness;
+          mouseState.springVel = (mouseState.springVel + force * dt) * Math.exp(-damping * dt);
+          mouseState.springPos = Math.max(-0.25, Math.min(1.4, mouseState.springPos + mouseState.springVel * dt));
+
+          if (mouseState.releasePulse > 0.002) {
+            mouseState.releaseAge += dt;
+            mouseState.releasePulse *= Math.exp(-3.4 * dt);
+          } else {
+            mouseState.releasePulse = 0.0;
+          }
+
+          const musicActive = (audioSettings.audioSource === 'lofi' && audioSettings.lofiEnabled) ||
+            (audioSettings.audioSource === 'custom' && !customAudioEl.paused);
+
+          if (audioSettings.waveSync && musicActive && musicAnalyser && freqData && audioCtx && audioCtx.state === 'running') {
+            musicAnalyser.getByteFrequencyData(freqData);
+            let lowSum = 0;
+            let midSum = 0;
+            const lowEnd = Math.min(5, freqData.length);
+            const midEnd = Math.min(20, freqData.length);
+            for (let i = 0; i < lowEnd; i++) lowSum += freqData[i];
+            for (let i = lowEnd; i < midEnd; i++) midSum += freqData[i];
+            const rawBass = lowSum / (lowEnd * 255);
+            const rawMid = midSum / (Math.max(1, midEnd - lowEnd) * 255);
+
+            smoothedBass += (rawBass - smoothedBass) * 0.28;
+            smoothedMid += (rawMid - smoothedMid) * 0.22;
+          } else {
+            smoothedBass *= 0.9;
+            smoothedMid *= 0.9;
+          }
+
+          const w = gameSettings.waves;
+          const speedScale = w.speed / 100;
+          const musicReactScale = w.musicReact / 100;
+          const indentScale = w.indentDepth / 100;
+
+          waveClock += dt * speedScale * (1.0 + (smoothedBass * 3.1 + smoothedMid * 1.4) * musicReactScale);
+
+          gl.uniform2f(resLoc, canvas.width, canvas.height);
+          gl.uniform1f(timeLoc, waveClock);
+          gl.uniform1f(rawTimeLoc, now * 0.001);
+          gl.uniform1f(pulseLoc, greenPulse);
+          gl.uniform1f(errPulseLoc, errorPulse);
+          gl.uniform3f(tintLoc, curTint[0], curTint[1], curTint[2]);
+          gl.uniform4f(seedLoc, w.seed[0], w.seed[1], w.seed[2], w.seed[3]);
+          gl.uniform2f(mouseLoc, mouseState.smoothX, mouseState.smoothY);
+          gl.uniform1f(mouseHoldLoc, mouseState.springPos * indentScale);
+          gl.uniform1f(releasePulseLoc, mouseState.releasePulse);
+          gl.uniform1f(releaseAgeLoc, mouseState.releaseAge);
+          gl.uniform1f(musicBassLoc, smoothedBass);
+          gl.uniform1f(musicMidLoc, smoothedMid);
+          gl.uniform1f(waveScaleLoc, w.scale / 100);
+          gl.uniform1f(waveTurbLoc, w.turbulence / 100);
+          gl.uniform1f(waveThickLoc, w.thickness / 100);
+          gl.uniform1f(waveBrightLoc, w.brightness / 100);
+          gl.uniform1f(waveMusicScaleLoc, musicReactScale);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         } else {
-          smoothedBass *= 0.9;
-          smoothedMid *= 0.9;
+          // Skip heavy wave shader when waves are toggled off
+          gl.clearColor(0.05, 0.08, 0.15, 1.0);
+          gl.clear(gl.COLOR_BUFFER_BIT);
         }
 
-        waveClock += dt * (1.0 + smoothedBass * 3.1 + smoothedMid * 1.4);
-
-        gl.uniform2f(resLoc, canvas.width, canvas.height);
-        gl.uniform1f(timeLoc, waveClock);
-        gl.uniform1f(rawTimeLoc, now * 0.001);
-        gl.uniform1f(pulseLoc, greenPulse);
-        gl.uniform1f(errPulseLoc, errorPulse);
-        gl.uniform3f(tintLoc, curTint[0], curTint[1], curTint[2]);
-        gl.uniform4f(seedLoc, waveSeed[0], waveSeed[1], waveSeed[2], waveSeed[3]);
-        gl.uniform2f(mouseLoc, mouseState.x, mouseState.y);
-        gl.uniform1f(mouseHoldLoc, mouseState.holdMix);
-        gl.uniform1f(musicBassLoc, smoothedBass);
-        gl.uniform1f(musicMidLoc, smoothedMid);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        stepAndRenderFx(dt);
         requestAnimationFrame(render);
       }
       requestAnimationFrame(render);
@@ -1715,20 +3125,36 @@
       noise.start(time);
     }
 
-    function playDigitChime(digit, status) {
+    function playDigitChime(digit, status, isChunkAccent) {
       initAudio();
       if (!audioCtx || audioSettings.sfx <= 0.01) return;
       const now = audioCtx.currentTime;
       const scale = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81];
+      const transpose = isLofiActive() ? pitchShift : 0;
 
       const osc = audioCtx.createOscillator();
       const env = audioCtx.createGain();
 
       if (status === 'right') {
+        const note = scale[digit] + transpose;
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(midiToFreq(scale[digit]), now);
+        osc.frequency.setValueAtTime(midiToFreq(note), now);
         env.gain.setValueAtTime(0.22, now);
         env.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+        if (isChunkAccent) {
+          const octOsc = audioCtx.createOscillator();
+          const octEnv = audioCtx.createGain();
+          octOsc.type = 'triangle';
+          octOsc.frequency.setValueAtTime(midiToFreq(note + 12), now + 0.02);
+          octEnv.gain.setValueAtTime(0.0001, now + 0.02);
+          octEnv.gain.linearRampToValueAtTime(0.11, now + 0.035);
+          octEnv.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+          octOsc.connect(octEnv);
+          octEnv.connect(sfxGain);
+          octOsc.start(now + 0.02);
+          octOsc.stop(now + 0.26);
+        }
       } else if (status === 'wrong') {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(165, now);
@@ -1753,6 +3179,29 @@
       env.connect(sfxGain);
       osc.start(now);
       osc.stop(now + 0.32);
+    }
+
+    function playCelebrationChord(isNewBest) {
+      initAudio();
+      if (!audioCtx || audioSettings.sfx <= 0.01) return;
+      const now = audioCtx.currentTime;
+      const transpose = isLofiActive() ? pitchShift : 0;
+      const notes = isNewBest ? [60, 64, 67, 72, 76, 79] : [60, 64, 67, 72];
+
+      for (let i = 0; i < notes.length; i++) {
+        const t = now + i * 0.06;
+        const osc = audioCtx.createOscillator();
+        const env = audioCtx.createGain();
+        osc.type = i >= notes.length - 2 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(midiToFreq(notes[i] + transpose), t);
+        env.gain.setValueAtTime(0.0001, t);
+        env.gain.linearRampToValueAtTime(0.16, t + 0.02);
+        env.gain.exponentialRampToValueAtTime(0.0001, t + 0.52);
+        osc.connect(env);
+        env.connect(sfxGain);
+        osc.start(t);
+        osc.stop(t + 0.55);
+      }
     }
 
     function restartSequencer() {
@@ -1839,11 +3288,11 @@
       playTrackObject(importedTracks[nextIdx], true);
     });
 
-    // --- Drawers & Controls ---
+    // --- DOM References ---
+    const mainContainer = document.getElementById('mainContainer');
+    const undoToastEl = document.getElementById('undoToast');
     const settingsDrawerBtn = document.getElementById('settingsDrawerBtn');
     const settingsDrawer = document.getElementById('settingsDrawer');
-    const soundDrawerBtn = document.getElementById('soundDrawerBtn');
-    const soundDrawer = document.getElementById('soundDrawer');
 
     const lofiToggleBtn = document.getElementById('lofiToggleBtn');
     const rerollBtn = document.getElementById('rerollBtn');
@@ -1854,8 +3303,22 @@
     const useLofiBtn = document.getElementById('useLofiBtn');
     const trackListEl = document.getElementById('trackList');
     const audioStatusText = document.getElementById('audioStatusText');
+    const soundSummary = document.getElementById('soundSummary');
+
+    const undoBtn = document.getElementById('undoBtn');
+    const redoBtn = document.getElementById('redoBtn');
+    const previewFxBtn = document.getElementById('previewFxBtn');
+    const fxMasterToggleBtn = document.getElementById('fxMasterToggleBtn');
+    const fxMasterRange = document.getElementById('fxMasterRange');
+    const fxMasterNum = document.getElementById('fxMasterNum');
+    const fxSummary = document.getElementById('fxSummary');
+
+    const waveEnabledToggleBtn = document.getElementById('waveEnabledToggleBtn');
+    const waveNewSeedBtn = document.getElementById('waveNewSeedBtn');
+    const wavesSummary = document.getElementById('wavesSummary');
 
     const practiceToggleBtn = document.getElementById('practiceToggleBtn');
+    const recallSummary = document.getElementById('recallSummary');
     const startAtInput = document.getElementById('startAtInput');
     const applyStartAtBtn = document.getElementById('applyStartAtBtn');
     const resetStartAtBtn = document.getElementById('resetStartAtBtn');
@@ -1869,6 +3332,228 @@
     const practiceBadge = document.getElementById('practiceBadge');
     const drillBadge = document.getElementById('drillBadge');
 
+    const exportSettingsBtn = document.getElementById('exportSettingsBtn');
+    const copySettingsBtn = document.getElementById('copySettingsBtn');
+    const importSettingsBtn = document.getElementById('importSettingsBtn');
+    const importSettingsInput = document.getElementById('importSettingsInput');
+    const resetSettingsBtn = document.getElementById('resetSettingsBtn');
+    const backupStatusText = document.getElementById('backupStatusText');
+
+    const subSections = Array.from(document.querySelectorAll('.sub-section[data-section]'));
+
+    const fxUiMap = {
+      shake: {
+        card: document.getElementById('fxCardShake'),
+        toggle: document.getElementById('fxShakeToggle'),
+        range: document.getElementById('fxShakeRange'),
+        num: document.getElementById('fxShakeNum'),
+        label: 'Screen Shake'
+      },
+      fireworks: {
+        card: document.getElementById('fxCardFireworks'),
+        toggle: document.getElementById('fxFireworksToggle'),
+        range: document.getElementById('fxFireworksRange'),
+        num: document.getElementById('fxFireworksNum'),
+        label: 'PB Fireworks'
+      },
+      shockwaves: {
+        card: document.getElementById('fxCardShockwaves'),
+        toggle: document.getElementById('fxShockwavesToggle'),
+        range: document.getElementById('fxShockwavesRange'),
+        num: document.getElementById('fxShockwavesNum'),
+        label: 'Shockwaves & Flash'
+      },
+      milestones: {
+        card: document.getElementById('fxCardMilestones'),
+        toggle: document.getElementById('fxMilestonesToggle'),
+        range: document.getElementById('fxMilestonesRange'),
+        num: document.getElementById('fxMilestonesNum'),
+        label: 'Milestone Bursts'
+      },
+      keySparks: {
+        card: document.getElementById('fxCardKeySparks'),
+        toggle: document.getElementById('fxKeySparksToggle'),
+        range: document.getElementById('fxKeySparksRange'),
+        num: document.getElementById('fxKeySparksNum'),
+        label: 'Chunk & Key Sparks'
+      },
+      shaderPulse: {
+        card: document.getElementById('fxCardShaderPulse'),
+        toggle: document.getElementById('fxShaderPulseToggle'),
+        range: document.getElementById('fxShaderPulseRange'),
+        num: document.getElementById('fxShaderPulseNum'),
+        label: 'Shader Wave Pulse'
+      }
+    };
+
+    // --- Unified Undo / Redo History (Digits, Settings, Drawers & Collapsing) ---
+    const MAX_UNDO_HISTORY = 100;
+    const undoStack = [];
+    const redoStack = [];
+    let toastTimer = null;
+
+    function showToast(msg) {
+      undoToastEl.textContent = msg;
+      undoToastEl.classList.add('visible');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() {
+        undoToastEl.classList.remove('visible');
+      }, 1500);
+    }
+
+    function cloneObj(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function snapshotAllSettings() {
+      return {
+        game: cloneObj(gameSettings),
+        audio: cloneObj(audioSettings)
+      };
+    }
+
+    function pushSettingsUndo(beforeSnap, label) {
+      const afterSnap = snapshotAllSettings();
+      if (JSON.stringify(beforeSnap) === JSON.stringify(afterSnap)) return false;
+      undoStack.push({
+        kind: 'settings',
+        label: label || 'setting',
+        before: beforeSnap,
+        after: afterSnap
+      });
+      if (undoStack.length > MAX_UNDO_HISTORY) undoStack.shift();
+      redoStack.length = 0;
+      syncUndoRedoButtons();
+      return true;
+    }
+
+    function pushDigitUndo(chars) {
+      if (!chars) return;
+      undoStack.push({ kind: 'digits', chars: chars });
+      if (undoStack.length > MAX_UNDO_HISTORY) undoStack.shift();
+      redoStack.length = 0;
+      syncUndoRedoButtons();
+    }
+
+    function stripDigitHistory() {
+      for (let i = undoStack.length - 1; i >= 0; i--) {
+        if (undoStack[i].kind === 'digits') undoStack.splice(i, 1);
+      }
+      for (let i = redoStack.length - 1; i >= 0; i--) {
+        if (redoStack[i].kind === 'digits') redoStack.splice(i, 1);
+      }
+      syncUndoRedoButtons();
+    }
+
+    function applySettingsSnapshot(snap) {
+      const prevStartAt = gameSettings.startAt;
+      const prevChunk = gameSettings.chunkSize;
+      const prevIdx = gameSettings.showIndices;
+
+      const cleanGame = sanitizeGameSettings(snap.game);
+      const cleanAudio = sanitizeAudioSettings(snap.audio, false);
+
+      Object.assign(gameSettings, cleanGame);
+      const curSource = audioSettings.audioSource;
+      const curTrackId = audioSettings.activeTrackId;
+      Object.assign(audioSettings, cleanAudio);
+      if (curSource === 'custom' && importedTracks.some(function(t) { return t.id === curTrackId; })) {
+        audioSettings.audioSource = curSource;
+        audioSettings.activeTrackId = curTrackId;
+      }
+
+      if (!gameSettings.fx.enabled) {
+        clearAllFx();
+        mainContainer.classList.remove('shake-celebrate', 'shake-loss');
+      }
+
+      refreshIdleHueTint();
+      updateShakeCssScale();
+      applyAudioSettings();
+      customAudioEl.loop = audioSettings.customLoop;
+      syncSoundUI();
+      syncSettingsUI();
+
+      if (gameSettings.startAt !== prevStartAt) {
+        initGame();
+      } else if (gameSettings.chunkSize !== prevChunk || gameSettings.showIndices !== prevIdx) {
+        invalidateBlocks();
+        renderDisplay();
+      }
+      flushSaveState();
+    }
+
+    function syncUndoRedoButtons() {
+      undoBtn.disabled = undoStack.length === 0;
+      redoBtn.disabled = redoStack.length === 0;
+    }
+
+    function performUndo() {
+      while (undoStack.length > 0) {
+        const entry = undoStack.pop();
+        if (entry.kind === 'digits') {
+          if (gameOver || typedDigits.length < entry.chars.length) continue;
+          const actualTail = typedDigits.slice(-entry.chars.length);
+          typedDigits = typedDigits.slice(0, -entry.chars.length);
+          count = typedDigits.length;
+          nextExpectedDigit = getPiDigit(runStartAt + typedDigits.length);
+          if (feedbackEl.classList.contains('practice-warn')) {
+            feedbackEl.className = 'feedback';
+            feedbackEl.innerHTML = '';
+          }
+          redoStack.push({ kind: 'digits', chars: actualTail });
+          playDigitChime(0, 'back', false);
+          updateMetricsUI();
+          renderDisplay();
+          scheduleSaveState();
+          syncUndoRedoButtons();
+          showToast(actualTail.length > 1 ? 'Undid ' + actualTail.length + ' digits' : 'Undid digit');
+          return;
+        } else if (entry.kind === 'settings') {
+          redoStack.push(entry);
+          applySettingsSnapshot(entry.before);
+          syncUndoRedoButtons();
+          showToast('Undid: ' + entry.label);
+          return;
+        }
+      }
+      syncUndoRedoButtons();
+    }
+
+    function performRedo() {
+      while (redoStack.length > 0) {
+        const entry = redoStack.pop();
+        if (entry.kind === 'digits') {
+          if (gameOver) continue;
+          typedDigits += entry.chars;
+          count = typedDigits.length;
+          nextExpectedDigit = getPiDigit(runStartAt + typedDigits.length);
+          if (runStartAt === 1 && mistakes === 0 && count > best) {
+            best = count;
+            bestEl.textContent = best;
+          }
+          undoStack.push(entry);
+          playDigitChime(Number(entry.chars[entry.chars.length - 1]), 'right', false);
+          updateMetricsUI();
+          renderDisplay();
+          scheduleSaveState();
+          syncUndoRedoButtons();
+          showToast(entry.chars.length > 1 ? 'Redid ' + entry.chars.length + ' digits' : 'Redid digit');
+          return;
+        } else if (entry.kind === 'settings') {
+          undoStack.push(entry);
+          applySettingsSnapshot(entry.after);
+          syncUndoRedoButtons();
+          showToast('Redid: ' + entry.label);
+          return;
+        }
+      }
+      syncUndoRedoButtons();
+    }
+
+    undoBtn.addEventListener('click', performUndo);
+    redoBtn.addEventListener('click', performRedo);
+
     function escapeHtml(str) {
       return String(str)
         .replace(/&/g, '&amp;')
@@ -1878,15 +3563,18 @@
     }
 
     function syncSoundStatusText() {
+      const masterPct = Math.round(audioSettings.master * 100);
       if (audioSettings.audioSource === 'custom' && audioSettings.activeTrackId) {
         const track = importedTracks.find(function(t) { return t.id === audioSettings.activeTrackId; });
         const trackLabel = track ? track.name : 'Imported Track';
         const stateTag = customAudioEl.paused ? ' (Paused)' : ' (Playing)';
         audioStatusText.innerHTML = 'Device Track: <strong>' + escapeHtml(trackLabel) + '</strong>' + stateTag;
+        soundSummary.textContent = trackLabel + ' • ' + masterPct + '%';
       } else {
         audioStatusText.innerHTML =
           'Track: <strong id="vibeName">' + escapeHtml(currentVibe.name + ' (' + currentGroove.name + ')') +
           '</strong> &bull; <strong id="bpmDisplay">' + currentBpm + ' BPM</strong>';
+        soundSummary.textContent = (audioSettings.lofiEnabled ? 'Lo-Fi: On' : 'Lo-Fi: Off') + ' • ' + masterPct + '%';
       }
     }
 
@@ -1894,15 +3582,12 @@
       if (audioSettings.lofiEnabled && audioSettings.audioSource === 'lofi') {
         lofiToggleBtn.textContent = 'Lo-Fi: On';
         lofiToggleBtn.className = 'btn-mini on';
-        soundDrawerBtn.classList.add('active');
       } else if (audioSettings.audioSource === 'custom' && !customAudioEl.paused) {
         lofiToggleBtn.textContent = 'Lo-Fi: Off';
         lofiToggleBtn.className = 'btn-mini off';
-        soundDrawerBtn.classList.add('active');
       } else {
         lofiToggleBtn.textContent = audioSettings.lofiEnabled ? 'Lo-Fi: On' : 'Lo-Fi: Off';
         lofiToggleBtn.className = 'btn-mini ' + (audioSettings.lofiEnabled ? 'on' : 'off');
-        soundDrawerBtn.classList.toggle('active', audioSettings.lofiEnabled);
       }
 
       waveSyncBtn.textContent = audioSettings.waveSync ? 'Wave Sync: On' : 'Wave Sync: Off';
@@ -1913,26 +3598,19 @@
 
       useLofiBtn.style.display = audioSettings.audioSource === 'custom' ? 'inline-block' : 'none';
 
-      soundDrawer.classList.toggle('open', audioSettings.drawerOpen);
-      soundDrawerBtn.classList.toggle('open', audioSettings.drawerOpen);
+      const syncVal = function(rangeId, numId, val) {
+        const r = document.getElementById(rangeId);
+        const n = document.getElementById(numId);
+        r.value = val;
+        if (document.activeElement !== n) n.value = val;
+      };
 
-      document.getElementById('volMaster').value = Math.round(audioSettings.master * 100);
-      document.getElementById('valMaster').textContent = Math.round(audioSettings.master * 100) + '%';
-
-      document.getElementById('volChords').value = Math.round(audioSettings.chords * 100);
-      document.getElementById('valChords').textContent = Math.round(audioSettings.chords * 100) + '%';
-
-      document.getElementById('volDrums').value = Math.round(audioSettings.drums * 100);
-      document.getElementById('valDrums').textContent = Math.round(audioSettings.drums * 100) + '%';
-
-      document.getElementById('volCrackle').value = Math.round(audioSettings.crackle * 100);
-      document.getElementById('valCrackle').textContent = Math.round(audioSettings.crackle * 100) + '%';
-
-      document.getElementById('volSfx').value = Math.round(audioSettings.sfx * 100);
-      document.getElementById('valSfx').textContent = Math.round(audioSettings.sfx * 100) + '%';
-
-      document.getElementById('filterCutoff').value = Math.round(audioSettings.cutoff);
-      document.getElementById('valFilter').textContent = Math.round(audioSettings.cutoff) + ' Hz';
+      syncVal('volMaster', 'numMaster', Math.round(audioSettings.master * 100));
+      syncVal('volChords', 'numChords', Math.round(audioSettings.chords * 100));
+      syncVal('volDrums', 'numDrums', Math.round(audioSettings.drums * 100));
+      syncVal('volCrackle', 'numCrackle', Math.round(audioSettings.crackle * 100));
+      syncVal('volSfx', 'numSfx', Math.round(audioSettings.sfx * 100));
+      syncVal('filterCutoff', 'numFilter', Math.round(audioSettings.cutoff));
 
       syncSoundStatusText();
     }
@@ -1994,6 +3672,60 @@
       }
     }
 
+    function syncFxUI() {
+      const fx = gameSettings.fx;
+      fxMasterToggleBtn.textContent = fx.enabled ? 'Master: On' : 'Master: Off';
+      fxMasterToggleBtn.className = 'btn-mini ' + (fx.enabled ? 'on' : 'off');
+      fxSummary.textContent = (fx.enabled ? 'On' : 'Off') + ' • ' + fx.masterIntensity + '%';
+
+      fxMasterRange.value = fx.masterIntensity;
+      if (document.activeElement !== fxMasterNum) fxMasterNum.value = fx.masterIntensity;
+
+      for (let i = 0; i < FX_KEYS.length; i++) {
+        const key = FX_KEYS[i];
+        const ui = fxUiMap[key];
+        const cfg = fx[key];
+        ui.toggle.textContent = cfg.enabled ? 'On' : 'Off';
+        ui.toggle.className = 'btn-mini xs ' + (cfg.enabled ? 'on' : 'off');
+        ui.range.value = cfg.intensity;
+        if (document.activeElement !== ui.num) ui.num.value = cfg.intensity;
+        ui.card.classList.toggle('muted', !fx.enabled || !cfg.enabled);
+      }
+      updateShakeCssScale();
+    }
+
+    function syncWavesUI() {
+      const w = gameSettings.waves;
+      waveEnabledToggleBtn.textContent = w.enabled ? 'Waves: On' : 'Waves: Off';
+      waveEnabledToggleBtn.className = 'btn-mini ' + (w.enabled ? 'on' : 'off');
+      wavesSummary.textContent = w.enabled ? ('Speed ' + w.speed + '% • Hue ' + w.hueShift + '°') : 'Off';
+
+      const syncW = function(rangeId, numId, val) {
+        const r = document.getElementById(rangeId);
+        const n = document.getElementById(numId);
+        r.value = val;
+        if (document.activeElement !== n) n.value = val;
+      };
+      syncW('waveSpeedRange', 'waveSpeedNum', w.speed);
+      syncW('waveScaleRange', 'waveScaleNum', w.scale);
+      syncW('waveTurbRange', 'waveTurbNum', w.turbulence);
+      syncW('waveThickRange', 'waveThickNum', w.thickness);
+      syncW('waveBrightRange', 'waveBrightNum', w.brightness);
+      syncW('waveMusicRange', 'waveMusicNum', w.musicReact);
+      syncW('waveIndentRange', 'waveIndentNum', w.indentDepth);
+      syncW('waveHueRange', 'waveHueNum', w.hueShift);
+    }
+
+    function syncCollapsedSectionsUI() {
+      subSections.forEach(function(sec) {
+        const key = sec.dataset.section;
+        const isCollapsed = Boolean(gameSettings.collapsedSections[key]);
+        sec.classList.toggle('collapsed', isCollapsed);
+        const hdr = sec.querySelector('.sub-section-header');
+        if (hdr) hdr.setAttribute('aria-expanded', String(!isCollapsed));
+      });
+    }
+
     function syncSettingsUI() {
       settingsDrawer.classList.toggle('open', gameSettings.drawerOpen);
       settingsDrawerBtn.classList.toggle('open', gameSettings.drawerOpen);
@@ -2003,7 +3735,11 @@
       settingsDrawerBtn.classList.toggle('warn-active', gameSettings.practiceMode || gameSettings.startAt > 1);
       practiceBadge.classList.toggle('visible', gameSettings.practiceMode);
 
-      startAtInput.value = gameSettings.startAt;
+      const chunkLabel = gameSettings.chunkSize <= 1 ? 'No chunks' : ('Chunk ' + gameSettings.chunkSize);
+      const drillLabel = gameSettings.startAt > 1 ? (' • #' + gameSettings.startAt.toLocaleString()) : '';
+      recallSummary.textContent = (gameSettings.practiceMode ? 'Practice • ' : '') + chunkLabel + drillLabel;
+
+      if (document.activeElement !== startAtInput) startAtInput.value = gameSettings.startAt;
       updateStartAtDesc();
 
       if (gameSettings.startAt > 1) {
@@ -2017,12 +3753,16 @@
       pills.forEach(function(pill) {
         pill.classList.toggle('selected', Number(pill.dataset.chunk) === gameSettings.chunkSize);
       });
-      customChunkInput.value = gameSettings.chunkSize;
+      if (document.activeElement !== customChunkInput) customChunkInput.value = gameSettings.chunkSize;
 
       chunkIndicesBtn.textContent = gameSettings.showIndices ? 'Indices: On' : 'Indices: Off';
       chunkIndicesBtn.className = 'btn-mini ' + (gameSettings.showIndices ? 'on' : 'off');
 
+      syncFxUI();
+      syncWavesUI();
+      syncCollapsedSectionsUI();
       renderMilestonesPanel();
+      syncUndoRedoButtons();
     }
 
     function renderMilestonesPanel() {
@@ -2045,44 +3785,296 @@
       milestoneChipsEl.appendChild(nextChip);
     }
 
-    settingsDrawerBtn.addEventListener('click', function() {
-      initAudio();
-      gameSettings.drawerOpen = !gameSettings.drawerOpen;
-      if (gameSettings.drawerOpen && audioSettings.drawerOpen) {
-        audioSettings.drawerOpen = false;
-        syncSoundUI();
+    // --- Collapsible Subcategory Listeners (with Undo Recording) ---
+    subSections.forEach(function(sec) {
+      const key = sec.dataset.section;
+      const hdr = sec.querySelector('.sub-section-header');
+
+      function toggleSubSection() {
+        const snap = snapshotAllSettings();
+        const nextCollapsed = !gameSettings.collapsedSections[key];
+        gameSettings.collapsedSections[key] = nextCollapsed;
+        syncCollapsedSectionsUI();
+        const actionWord = nextCollapsed ? 'Collapse ' : 'Expand ';
+        pushSettingsUndo(snap, actionWord + (SECTION_LABELS[key] || key));
+        flushSaveState();
       }
-      syncSettingsUI();
+
+      hdr.addEventListener('click', function(e) {
+        if (e.target.closest('button, input, label')) return;
+        toggleSubSection();
+      });
+
+      hdr.addEventListener('keydown', function(e) {
+        if (e.target !== hdr) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleSubSection();
+        }
+      });
+    });
+
+    // --- Reusable Bidirectional Typable Slider Binder (with Undo Support) ---
+    function bindTypableSlider(opts) {
+      const rangeEl = document.getElementById(opts.rangeId);
+      const numEl = document.getElementById(opts.numId);
+      let preEditSnap = null;
+
+      function startEdit() {
+        if (!preEditSnap) preEditSnap = snapshotAllSettings();
+      }
+
+      function commitEdit() {
+        if (preEditSnap) {
+          pushSettingsUndo(preEditSnap, opts.label);
+          preEditSnap = null;
+        }
+        flushSaveState();
+      }
+
+      rangeEl.addEventListener('pointerdown', startEdit);
+      rangeEl.addEventListener('keydown', function(e) {
+        if (!e.ctrlKey && !e.metaKey) startEdit();
+      });
+
+      rangeEl.addEventListener('input', function() {
+        startEdit();
+        const v = Math.round(clampNum(rangeEl.value, opts.min, opts.max, opts.min));
+        numEl.value = v;
+        opts.onApply(v);
+      });
+
+      rangeEl.addEventListener('change', commitEdit);
+
+      numEl.addEventListener('focus', function() {
+        preEditSnap = snapshotAllSettings();
+        numEl.select();
+      });
+
+      numEl.addEventListener('input', function() {
+        const raw = numEl.value.trim();
+        if (raw === '' || raw === '-') return;
+        const parsed = Number(raw);
+        if (!Number.isFinite(parsed)) return;
+        const clamped = Math.round(clampNum(parsed, opts.min, opts.max, opts.min));
+        rangeEl.value = clamped;
+        opts.onApply(clamped);
+      });
+
+      numEl.addEventListener('blur', function() {
+        const parsed = Number(numEl.value);
+        const clamped = Math.round(clampNum(Number.isFinite(parsed) && numEl.value.trim() !== '' ? parsed : opts.getCurrent(), opts.min, opts.max, opts.min));
+        numEl.value = clamped;
+        rangeEl.value = clamped;
+        opts.onApply(clamped);
+        commitEdit();
+      });
+
+      numEl.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          numEl.blur();
+        } else if (e.key === 'Escape') {
+          if (preEditSnap) {
+            applySettingsSnapshot(preEditSnap);
+            preEditSnap = null;
+          }
+          numEl.blur();
+        }
+      });
+    }
+
+    // Bind Sound Sliders
+    bindTypableSlider({
+      rangeId: 'volMaster', numId: 'numMaster', min: 0, max: 100, label: 'Master Volume',
+      getCurrent: function() { return Math.round(audioSettings.master * 100); },
+      onApply: function(v) { initAudio(); audioSettings.master = v / 100; applyAudioSettings(); syncSoundStatusText(); scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'volChords', numId: 'numChords', min: 0, max: 100, label: 'Chords Volume',
+      getCurrent: function() { return Math.round(audioSettings.chords * 100); },
+      onApply: function(v) { initAudio(); audioSettings.chords = v / 100; applyAudioSettings(); scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'volDrums', numId: 'numDrums', min: 0, max: 100, label: 'Drums Volume',
+      getCurrent: function() { return Math.round(audioSettings.drums * 100); },
+      onApply: function(v) { initAudio(); audioSettings.drums = v / 100; applyAudioSettings(); scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'volCrackle', numId: 'numCrackle', min: 0, max: 100, label: 'Vinyl Crackle',
+      getCurrent: function() { return Math.round(audioSettings.crackle * 100); },
+      onApply: function(v) { initAudio(); audioSettings.crackle = v / 100; applyAudioSettings(); scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'volSfx', numId: 'numSfx', min: 0, max: 100, label: 'SFX Volume',
+      getCurrent: function() { return Math.round(audioSettings.sfx * 100); },
+      onApply: function(v) { initAudio(); audioSettings.sfx = v / 100; applyAudioSettings(); scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'filterCutoff', numId: 'numFilter', min: 450, max: 4200, label: 'Tape Low-Pass',
+      getCurrent: function() { return Math.round(audioSettings.cutoff); },
+      onApply: function(v) { initAudio(); audioSettings.cutoff = v; applyAudioSettings(); scheduleSaveState(); }
+    });
+
+    // Bind Master Intensity Slider (sets ALL individual intensities to its value)
+    bindTypableSlider({
+      rangeId: 'fxMasterRange', numId: 'fxMasterNum', min: 0, max: 200, label: 'Master Intensity',
+      getCurrent: function() { return gameSettings.fx.masterIntensity; },
+      onApply: function(v) {
+        gameSettings.fx.masterIntensity = v;
+        for (let i = 0; i < FX_KEYS.length; i++) {
+          const k = FX_KEYS[i];
+          gameSettings.fx[k].intensity = v;
+          const ui = fxUiMap[k];
+          ui.range.value = v;
+          if (document.activeElement !== ui.num) ui.num.value = v;
+        }
+        fxSummary.textContent = (gameSettings.fx.enabled ? 'On' : 'Off') + ' • ' + v + '%';
+        updateShakeCssScale();
+        scheduleSaveState();
+      }
+    });
+
+    // Bind Individual Effect Sliders & Toggles
+    FX_KEYS.forEach(function(key) {
+      const ui = fxUiMap[key];
+      bindTypableSlider({
+        rangeId: ui.range.id, numId: ui.num.id, min: 0, max: 200, label: ui.label + ' Intensity',
+        getCurrent: function() { return gameSettings.fx[key].intensity; },
+        onApply: function(v) {
+          gameSettings.fx[key].intensity = v;
+          if (key === 'shake') updateShakeCssScale();
+          scheduleSaveState();
+        }
+      });
+
+      ui.toggle.addEventListener('click', function() {
+        const snap = snapshotAllSettings();
+        gameSettings.fx[key].enabled = !gameSettings.fx[key].enabled;
+        if (!gameSettings.fx[key].enabled && key === 'shake') {
+          mainContainer.classList.remove('shake-celebrate', 'shake-loss');
+        }
+        syncFxUI();
+        pushSettingsUndo(snap, ui.label + ' Toggle');
+        flushSaveState();
+      });
+    });
+
+    // Bind Background Wave Sliders (8 Unique Settings)
+    bindTypableSlider({
+      rangeId: 'waveSpeedRange', numId: 'waveSpeedNum', min: 0, max: 300, label: 'Wave Speed',
+      getCurrent: function() { return gameSettings.waves.speed; },
+      onApply: function(v) { gameSettings.waves.speed = v; syncWavesUI(); scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'waveScaleRange', numId: 'waveScaleNum', min: 30, max: 250, label: 'Wave Scale',
+      getCurrent: function() { return gameSettings.waves.scale; },
+      onApply: function(v) { gameSettings.waves.scale = v; scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'waveTurbRange', numId: 'waveTurbNum', min: 0, max: 200, label: 'Wave Turbulence',
+      getCurrent: function() { return gameSettings.waves.turbulence; },
+      onApply: function(v) { gameSettings.waves.turbulence = v; scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'waveThickRange', numId: 'waveThickNum', min: 20, max: 250, label: 'Ribbon Thickness',
+      getCurrent: function() { return gameSettings.waves.thickness; },
+      onApply: function(v) { gameSettings.waves.thickness = v; scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'waveBrightRange', numId: 'waveBrightNum', min: 0, max: 200, label: 'Wave Brightness',
+      getCurrent: function() { return gameSettings.waves.brightness; },
+      onApply: function(v) { gameSettings.waves.brightness = v; scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'waveMusicRange', numId: 'waveMusicNum', min: 0, max: 200, label: 'Wave Music Reactivity',
+      getCurrent: function() { return gameSettings.waves.musicReact; },
+      onApply: function(v) { gameSettings.waves.musicReact = v; scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'waveIndentRange', numId: 'waveIndentNum', min: 0, max: 200, label: 'Hold Indent Depth',
+      getCurrent: function() { return gameSettings.waves.indentDepth; },
+      onApply: function(v) { gameSettings.waves.indentDepth = v; scheduleSaveState(); }
+    });
+    bindTypableSlider({
+      rangeId: 'waveHueRange', numId: 'waveHueNum', min: -180, max: 180, label: 'Wave Hue Shift',
+      getCurrent: function() { return gameSettings.waves.hueShift; },
+      onApply: function(v) { gameSettings.waves.hueShift = v; refreshIdleHueTint(); syncWavesUI(); scheduleSaveState(); }
+    });
+
+    waveEnabledToggleBtn.addEventListener('click', function() {
+      const snap = snapshotAllSettings();
+      gameSettings.waves.enabled = !gameSettings.waves.enabled;
+      syncWavesUI();
+      pushSettingsUndo(snap, 'Waves Toggle');
       flushSaveState();
     });
 
-    soundDrawerBtn.addEventListener('click', function() {
-      initAudio();
-      audioSettings.drawerOpen = !audioSettings.drawerOpen;
-      if (audioSettings.drawerOpen && gameSettings.drawerOpen) {
-        gameSettings.drawerOpen = false;
-        syncSettingsUI();
+    waveNewSeedBtn.addEventListener('click', function() {
+      const snap = snapshotAllSettings();
+      gameSettings.waves.seed = [Math.random(), Math.random(), Math.random(), Math.random()];
+      pushSettingsUndo(snap, 'New Wave Seed');
+      flushSaveState();
+      showToast('New wave pattern');
+    });
+
+    fxMasterToggleBtn.addEventListener('click', function() {
+      const snap = snapshotAllSettings();
+      gameSettings.fx.enabled = !gameSettings.fx.enabled;
+      if (!gameSettings.fx.enabled) {
+        clearAllFx();
+        mainContainer.classList.remove('shake-celebrate', 'shake-loss');
       }
-      syncSoundUI();
+      syncFxUI();
+      pushSettingsUndo(snap, 'Master Effects Toggle');
+      flushSaveState();
+    });
+
+    previewFxBtn.addEventListener('click', function() {
+      initAudio();
+      if (!gameSettings.fx.enabled) {
+        showToast('Turn Master Effects On to preview');
+        return;
+      }
+      bestEl.classList.remove('best-pop');
+      void bestEl.offsetWidth;
+      bestEl.classList.add('best-pop');
+      triggerContainerAnimation('shake-celebrate');
+      playCelebrationChord(true);
+      triggerPostRunFx(true, true, 'preview');
+    });
+
+    // Main Settings Drawer Toggle (with Undo Recording)
+    settingsDrawerBtn.addEventListener('click', function() {
+      initAudio();
+      const snap = snapshotAllSettings();
+      gameSettings.drawerOpen = !gameSettings.drawerOpen;
+      syncSettingsUI();
+      pushSettingsUndo(snap, gameSettings.drawerOpen ? 'Open Settings' : 'Collapse Settings');
       flushSaveState();
     });
 
     lofiToggleBtn.addEventListener('click', function() {
       initAudio();
+      const snap = snapshotAllSettings();
       if (audioSettings.audioSource === 'custom') {
         switchBackToLofi();
+        pushSettingsUndo(snap, 'Switch to Lo-Fi');
         return;
       }
       audioSettings.lofiEnabled = !audioSettings.lofiEnabled;
       syncSoundUI();
       applyAudioSettings();
+      pushSettingsUndo(snap, 'Lo-Fi Toggle');
       flushSaveState();
     });
 
     waveSyncBtn.addEventListener('click', function() {
       initAudio();
+      const snap = snapshotAllSettings();
       audioSettings.waveSync = !audioSettings.waveSync;
       syncSoundUI();
+      pushSettingsUndo(snap, 'Wave Sync Toggle');
       flushSaveState();
     });
 
@@ -2124,33 +4116,100 @@
     });
 
     customLoopBtn.addEventListener('click', function() {
+      const snap = snapshotAllSettings();
       audioSettings.customLoop = !audioSettings.customLoop;
       customAudioEl.loop = audioSettings.customLoop;
       syncSoundUI();
+      pushSettingsUndo(snap, 'Custom Loop Toggle');
       flushSaveState();
     });
 
     useLofiBtn.addEventListener('click', switchBackToLofi);
 
-    function bindSlider(id, valId, key, unit, isFreq) {
-      const el = document.getElementById(id);
-      const valEl = document.getElementById(valId);
-      el.addEventListener('input', function() {
-        initAudio();
-        const v = Number(el.value);
-        audioSettings[key] = isFreq ? v : v / 100;
-        valEl.textContent = v + unit;
-        applyAudioSettings();
-        scheduleSaveState();
-      });
+    // --- Settings Export / Import / Reset ---
+    function buildExportPayload() {
+      const exportedGame = cloneObj(gameSettings);
+      delete exportedGame.drawerOpen;
+      const exportedAudio = cloneObj(audioSettings);
+      delete exportedAudio.audioSource;
+      delete exportedAudio.activeTrackId;
+      return {
+        app: 'pi-recall',
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        settings: exportedGame,
+        audio: exportedAudio
+      };
     }
 
-    bindSlider('volMaster', 'valMaster', 'master', '%', false);
-    bindSlider('volChords', 'valChords', 'chords', '%', false);
-    bindSlider('volDrums', 'valDrums', 'drums', '%', false);
-    bindSlider('volCrackle', 'valCrackle', 'crackle', '%', false);
-    bindSlider('volSfx', 'valSfx', 'sfx', '%', false);
-    bindSlider('filterCutoff', 'valFilter', 'cutoff', ' Hz', true);
+    exportSettingsBtn.addEventListener('click', function() {
+      const json = JSON.stringify(buildExportPayload(), null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pi-recall-settings.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      backupStatusText.textContent = 'Exported pi-recall-settings.json';
+      showToast('Settings exported');
+    });
+
+    copySettingsBtn.addEventListener('click', async function() {
+      const json = JSON.stringify(buildExportPayload(), null, 2);
+      try {
+        await navigator.clipboard.writeText(json);
+        backupStatusText.textContent = 'Copied settings JSON to clipboard';
+        showToast('Copied settings JSON');
+      } catch (e) {
+        backupStatusText.textContent = 'Clipboard blocked — use Export .json instead';
+      }
+    });
+
+    importSettingsBtn.addEventListener('click', function() {
+      importSettingsInput.click();
+    });
+
+    importSettingsInput.addEventListener('change', async function(e) {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        if (!parsed || typeof parsed !== 'object' || (!parsed.settings && !parsed.audio)) {
+          throw new Error('Invalid format');
+        }
+        const snap = snapshotAllSettings();
+        const importedSnap = {
+          game: parsed.settings ? sanitizeGameSettings(parsed.settings) : cloneObj(gameSettings),
+          audio: parsed.audio ? sanitizeAudioSettings(parsed.audio, false) : cloneObj(audioSettings)
+        };
+        importedSnap.game.drawerOpen = gameSettings.drawerOpen;
+
+        applySettingsSnapshot(importedSnap);
+        pushSettingsUndo(snap, 'Import Settings');
+        backupStatusText.textContent = 'Imported "' + file.name + '" (Ctrl+Z to undo)';
+        showToast('Imported settings');
+      } catch (err) {
+        backupStatusText.textContent = 'Import failed: invalid settings JSON file';
+        showToast('Invalid settings file');
+      }
+    });
+
+    resetSettingsBtn.addEventListener('click', function() {
+      const snap = snapshotAllSettings();
+      const defGame = createDefaultGameSettings();
+      const defAudio = createDefaultAudioSettings();
+      defGame.drawerOpen = gameSettings.drawerOpen;
+      defGame.collapsedSections = cloneObj(gameSettings.collapsedSections);
+      applySettingsSnapshot({ game: defGame, audio: defAudio });
+      pushSettingsUndo(snap, 'Reset Defaults');
+      backupStatusText.textContent = 'Reset to default settings (Ctrl+Z to undo)';
+      showToast('Reset to defaults');
+    });
 
     document.addEventListener('pointerdown', initAudio, { once: true });
     document.addEventListener('keydown', initAudio, { once: true });
@@ -2177,6 +4236,8 @@
     let count = 0;
     let mistakes = 0;
     let best = Number(savedData.best || localStorage.getItem('pi_best_score') || 0);
+    let prevBestBeforeRun = best;
+    let beatBestThisRun = false;
     let gameOver = false;
     let endReason = null;
     let lastGuessedDigit = null;
@@ -2283,7 +4344,6 @@
       const showIdx = gameSettings.showIndices;
       const blockSize = getBlockSize();
 
-      // Sync frozen completed blocks (O(1) per normal keypress!)
       const frozenBlocks = Math.floor(totalFixed / blockSize);
       while (blocksEl.children.length > frozenBlocks) {
         blocksEl.lastElementChild.remove();
@@ -2296,7 +4356,6 @@
         blocksEl.appendChild(frag);
       }
 
-      // Render only the active tail (< blockSize digits + revealed + slots)
       const tailStart = frozenBlocks * blockSize + 1;
       let tailHtml = '';
 
@@ -2339,7 +4398,6 @@
           }
 
           if (ce <= totalFixed) {
-            // Completed chunk in tail (pure anchor, pure typed, or boundary)
             if (ce <= anchorCount) {
               tailHtml += '<span class="anchor-digit">' + piStr.slice(cs, ce + 1) + '</span>';
             } else if (cs > anchorCount) {
@@ -2349,7 +4407,6 @@
                 '<span class="typed">' + piStr.slice(anchorCount + 1, ce + 1) + '</span>';
             }
           } else {
-            // Active or revealed chunk
             for (let pos = cs; pos <= ce; pos++) {
               if (pos <= anchorCount) {
                 tailHtml += '<span class="anchor-digit">' + piStr[pos] + '</span>';
@@ -2389,6 +4446,8 @@
             count: count,
             mistakes: mistakes,
             elapsedMs: elapsedMs,
+            prevBestBeforeRun: prevBestBeforeRun,
+            beatBestThisRun: beatBestThisRun,
             gameOver: gameOver,
             endReason: endReason,
             lastGuessedDigit: lastGuessedDigit,
@@ -2410,12 +4469,25 @@
       if (document.visibilityState === 'hidden') flushSaveState();
     });
 
+    function triggerContainerAnimation(className) {
+      if (getEffectScale('shake') <= 0) return;
+      mainContainer.classList.remove('shake-celebrate', 'shake-loss');
+      void mainContainer.offsetWidth;
+      mainContainer.classList.add(className);
+    }
+
     function renderFeedback() {
       const position = runStartAt + typedDigits.length;
       const finalTime = formatTime(elapsedMs);
       const finalWpm = computeWpm(count, elapsedMs);
       const mistakeNote = mistakes > 0 ? ' &bull; Mistakes: <strong>' + mistakes + '</strong>' : '';
       const drillNote = runStartAt > 1 ? ' (from #' + runStartAt.toLocaleString() + ')' : '';
+
+      let pbBannerHtml = '';
+      if (beatBestThisRun) {
+        const delta = prevBestBeforeRun > 0 ? ' (+' + (count - prevBestBeforeRun) + ' over ' + prevBestBeforeRun + ')' : '';
+        pbBannerHtml = '<div class="pb-banner">New Personal Best!' + delta + '</div><br>';
+      }
 
       let milestoneHtml = '';
       if (runNewMilestones.length > 0) {
@@ -2435,9 +4507,10 @@
       }
 
       if (endReason === 'wrong') {
-        shaderState = 1;
+        shaderState = beatBestThisRun ? 3 : 1;
         feedbackEl.className = 'feedback error';
         feedbackEl.innerHTML =
+          pbBannerHtml +
           '<strong>Game Over!</strong> You typed <span class="highlight-digit">' +
           lastGuessedDigit +
           '</span>, but decimal place #' +
@@ -2452,9 +4525,10 @@
           finalWpm +
           ' WPM</strong>).' + milestoneHtml;
       } else if (endReason === 'giveup') {
-        shaderState = 2;
+        shaderState = beatBestThisRun ? 3 : 2;
         feedbackEl.className = 'feedback giveup';
         feedbackEl.innerHTML =
+          pbBannerHtml +
           '<strong>Stopped!</strong> Decimal place #' +
           position.toLocaleString() +
           ' is <span class="highlight-digit">' +
@@ -2483,6 +4557,8 @@
         count = Number(savedRun.count || typedDigits.length);
         mistakes = Number(savedRun.mistakes || 0);
         elapsedMs = Number(savedRun.elapsedMs || 0);
+        prevBestBeforeRun = savedRun.prevBestBeforeRun !== undefined ? Number(savedRun.prevBestBeforeRun) : best;
+        beatBestThisRun = Boolean(savedRun.beatBestThisRun);
         gameOver = Boolean(savedRun.gameOver);
         endReason = savedRun.endReason || null;
         lastGuessedDigit = savedRun.lastGuessedDigit !== undefined ? savedRun.lastGuessedDigit : null;
@@ -2500,11 +4576,14 @@
           backspaceBtn.disabled = true;
           dontKnowBtn.disabled = true;
           showNextBtn.classList.add('visible');
+          mainContainer.classList.toggle('pb-glow', beatBestThisRun);
           renderFeedback();
         } else {
           timerRunning = false;
           lastTimerNow = null;
           shaderState = 0;
+          bestEl.classList.toggle('new-best-live', beatBestThisRun);
+          mainContainer.classList.remove('pb-glow');
           digitInput.disabled = false;
           backspaceBtn.disabled = false;
           dontKnowBtn.disabled = false;
@@ -2527,6 +4606,8 @@
       count = 0;
       mistakes = 0;
       elapsedMs = 0;
+      prevBestBeforeRun = best;
+      beatBestThisRun = false;
       timerRunning = false;
       lastTimerNow = null;
       gameOver = false;
@@ -2536,6 +4617,11 @@
       shaderState = 0;
       greenPulse = 0.0;
       errorPulse = 0.0;
+
+      stripDigitHistory();
+      mainContainer.classList.remove('pb-glow', 'shake-celebrate', 'shake-loss');
+      bestEl.classList.remove('new-best-live', 'best-pop');
+      clearAllFx();
 
       invalidateBlocks();
       updateMetricsUI();
@@ -2578,18 +4664,40 @@
       digitInput.disabled = true;
       backspaceBtn.disabled = true;
       dontKnowBtn.disabled = true;
-      greenPulse = 0.0;
 
-      if (reason === 'wrong') {
-        playDigitChime(0, 'wrong');
+      stripDigitHistory();
+      bestEl.classList.remove('new-best-live');
+
+      const hasMilestones = runNewMilestones.length > 0;
+      const pulseMult = getEffectScale('shaderPulse');
+
+      if (beatBestThisRun) {
+        greenPulse = 2.0 * pulseMult;
+        mainContainer.classList.add('pb-glow');
+        bestEl.classList.remove('best-pop');
+        void bestEl.offsetWidth;
+        bestEl.classList.add('best-pop');
+        triggerContainerAnimation('shake-celebrate');
+        playCelebrationChord(true);
+      } else if (hasMilestones) {
+        greenPulse = 1.6 * pulseMult;
+        playCelebrationChord(false);
+      } else if (reason === 'wrong') {
+        greenPulse = 0.0;
+        errorPulse = 1.4 * pulseMult;
+        triggerContainerAnimation('shake-loss');
+        playDigitChime(0, 'wrong', false);
       } else {
-        playDigitChime(0, 'giveup');
+        greenPulse = 0.0;
+        playDigitChime(0, 'giveup', false);
       }
 
       renderMilestonesPanel();
       renderDisplay();
       renderFeedback();
       showNextBtn.classList.add('visible');
+
+      triggerPostRunFx(beatBestThisRun, hasMilestones, reason);
       flushSaveState();
     }
 
@@ -2605,7 +4713,8 @@
 
       revealedDigits += chunk;
       renderDisplay();
-      playDigitChime(5, 'right');
+      triggerPeekFx();
+      playDigitChime(5, 'right', false);
       flushSaveState();
     }
 
@@ -2624,8 +4733,8 @@
       }
     }
 
-    function handleDigit(char) {
-      if (gameOver) return;
+    function handleDigit(char, skipHistory) {
+      if (gameOver) return false;
       initAudio();
       const num = Number(char);
 
@@ -2636,8 +4745,18 @@
         }
         typedDigits += char;
         count = typedDigits.length;
-        greenPulse = 1.0;
-        playDigitChime(num, 'right');
+        if (!skipHistory) pushDigitUndo(char);
+
+        const isChunkAccent = gameSettings.chunkSize > 1 && ((runStartAt - 1 + count) % gameSettings.chunkSize === 0);
+        const pulseMult = getEffectScale('shaderPulse');
+        greenPulse = (isChunkAccent ? 1.55 : 1.05) * pulseMult;
+        playDigitChime(num, 'right', isChunkAccent);
+
+        if (isChunkAccent) {
+          triggerChunkAccentFx();
+        } else {
+          triggerKeyMicroSpark();
+        }
 
         if (feedbackEl.classList.contains('practice-warn')) {
           feedbackEl.className = 'feedback';
@@ -2648,6 +4767,10 @@
           if (count > best) {
             best = count;
             bestEl.textContent = best;
+            if (prevBestBeforeRun > 0 || count >= 5) {
+              beatBestThisRun = true;
+              bestEl.classList.add('new-best-live');
+            }
           }
           checkAndRecordMilestones(count);
         }
@@ -2656,6 +4779,7 @@
         updateMetricsUI();
         renderDisplay();
         scheduleSaveState();
+        return true;
       } else {
         if (gameSettings.practiceMode) {
           if (!timerRunning && typedDigits.length > 0) {
@@ -2663,12 +4787,15 @@
             lastTimerNow = performance.now();
           }
           mistakes++;
-          errorPulse = 1.0;
-          playDigitChime(0, 'wrong');
+          errorPulse = 1.2 * getEffectScale('shaderPulse');
+          playDigitChime(0, 'wrong', false);
+          triggerPracticeErrorFx();
 
-          displayBox.classList.remove('shake');
-          void displayBox.offsetWidth;
-          displayBox.classList.add('shake');
+          if (getEffectScale('shake') > 0) {
+            displayBox.classList.remove('shake');
+            void displayBox.offsetWidth;
+            displayBox.classList.add('shake');
+          }
 
           const pos = runStartAt + typedDigits.length;
           feedbackEl.className = 'feedback practice-warn';
@@ -2682,6 +4809,7 @@
         } else {
           endGame('wrong', char);
         }
+        return false;
       }
     }
 
@@ -2697,16 +4825,18 @@
         feedbackEl.innerHTML = '';
       }
 
-      playDigitChime(0, 'back');
+      playDigitChime(0, 'back', false);
       updateMetricsUI();
       renderDisplay();
       scheduleSaveState();
     }
 
-    // --- Settings Event Handlers ---
+    // --- Recall & Practice Settings Event Handlers (with Undo Recording) ---
     practiceToggleBtn.addEventListener('click', function() {
+      const snap = snapshotAllSettings();
       gameSettings.practiceMode = !gameSettings.practiceMode;
       syncSettingsUI();
+      pushSettingsUndo(snap, 'Practice Mode');
       if (!gameSettings.practiceMode) {
         initGame();
       } else {
@@ -2715,10 +4845,16 @@
       }
     });
 
-    function applyStartAtValue(val) {
+    function applyStartAtValue(val, label) {
       const parsed = Math.max(1, Math.min(MAX_DRILL_START, Math.floor(Number(val) || 1)));
+      if (parsed === gameSettings.startAt) {
+        syncSettingsUI();
+        return;
+      }
+      const snap = snapshotAllSettings();
       gameSettings.startAt = parsed;
       syncSettingsUI();
+      pushSettingsUndo(snap, label || ('Drill Start #' + parsed));
       initGame();
     }
 
@@ -2739,34 +4875,73 @@
     });
 
     resetStartAtBtn.addEventListener('click', function() {
-      applyStartAtValue(1);
+      applyStartAtValue(1, 'Reset Drill Start');
     });
 
     chunkPillsEl.addEventListener('click', function(e) {
       const btn = e.target.closest('.chunk-pill');
       if (!btn) return;
-      gameSettings.chunkSize = Number(btn.dataset.chunk);
+      const val = Number(btn.dataset.chunk);
+      if (val === gameSettings.chunkSize) return;
+      const snap = snapshotAllSettings();
+      gameSettings.chunkSize = val;
       syncSettingsUI();
       invalidateBlocks();
       renderDisplay();
+      pushSettingsUndo(snap, 'Chunk Size ' + (val <= 1 ? 'Off' : val));
       flushSaveState();
       digitInput.focus();
     });
 
+    let customChunkPreSnap = null;
+    customChunkInput.addEventListener('focus', function() {
+      customChunkPreSnap = snapshotAllSettings();
+      customChunkInput.select();
+    });
     customChunkInput.addEventListener('input', function() {
-      const v = Math.max(1, Math.min(25, Math.floor(Number(customChunkInput.value) || 1)));
+      if (!customChunkPreSnap) customChunkPreSnap = snapshotAllSettings();
+      const raw = customChunkInput.value.trim();
+      if (raw === '') return;
+      const v = Math.max(1, Math.min(25, Math.floor(Number(raw) || 1)));
       gameSettings.chunkSize = v;
       syncSettingsUI();
       invalidateBlocks();
       renderDisplay();
       scheduleSaveState();
     });
+    customChunkInput.addEventListener('blur', function() {
+      const v = Math.max(1, Math.min(25, Math.floor(Number(customChunkInput.value) || 1)));
+      customChunkInput.value = v;
+      gameSettings.chunkSize = v;
+      syncSettingsUI();
+      invalidateBlocks();
+      renderDisplay();
+      if (customChunkPreSnap) {
+        pushSettingsUndo(customChunkPreSnap, 'Chunk Size ' + v);
+        customChunkPreSnap = null;
+      }
+      flushSaveState();
+    });
+    customChunkInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        customChunkInput.blur();
+      } else if (e.key === 'Escape') {
+        if (customChunkPreSnap) {
+          applySettingsSnapshot(customChunkPreSnap);
+          customChunkPreSnap = null;
+        }
+        customChunkInput.blur();
+      }
+    });
 
     chunkIndicesBtn.addEventListener('click', function() {
+      const snap = snapshotAllSettings();
       gameSettings.showIndices = !gameSettings.showIndices;
       syncSettingsUI();
       invalidateBlocks();
       renderDisplay();
+      pushSettingsUndo(snap, 'Chunk Indices');
       flushSaveState();
     });
 
@@ -2775,12 +4950,17 @@
       const raw = e.target.value;
       e.target.value = '';
 
+      let batch = '';
       for (let i = 0; i < raw.length; i++) {
         const char = raw[i];
         if (char >= '0' && char <= '9') {
-          handleDigit(char);
+          const ok = handleDigit(char, true);
+          if (ok) batch += char;
           if (gameOver) break;
         }
+      }
+      if (batch.length > 0 && !gameOver) {
+        pushDigitUndo(batch);
       }
     });
 
@@ -2811,10 +4991,35 @@
     restartBtn.addEventListener('click', initGame);
 
     document.addEventListener('keydown', function(e) {
-      if (document.activeElement && (document.activeElement === startAtInput || document.activeElement === customChunkInput)) {
+      const keyLower = e.key.toLowerCase();
+
+      // Unified Ctrl+Z / Cmd+Z (Undo) and Ctrl+Y / Cmd+Shift+Z (Redo)
+      if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+        if (keyLower === 'z') {
+          if (document.activeElement === startAtInput && Number(startAtInput.value) !== gameSettings.startAt) {
+            return; // allow reverting unsubmitted drill number natively
+          }
+          e.preventDefault();
+          if (e.shiftKey) performRedo();
+          else performUndo();
+          return;
+        }
+        if (keyLower === 'y') {
+          e.preventDefault();
+          performRedo();
+          return;
+        }
+      }
+
+      if (document.activeElement && (
+        document.activeElement === startAtInput ||
+        document.activeElement === customChunkInput ||
+        document.activeElement.classList.contains('slider-num-input')
+      )) {
         return;
       }
-      if (gameOver && (e.key === 'Enter' || e.key.toLowerCase() === 'r')) {
+
+      if (gameOver && (e.key === 'Enter' || keyLower === 'r')) {
         e.preventDefault();
         initGame();
       }
