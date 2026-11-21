@@ -2926,7 +2926,15 @@
       musicMixGain.connect(masterGain);
 
       sfxGain.connect(masterGain);
-      masterGain.connect(audioCtx.destination);
+      const limiter = audioCtx.createDynamicsCompressor();
+      limiter.threshold.value = -10;
+      limiter.knee.value = 12;
+      limiter.ratio.value = 12;
+      limiter.attack.value = 0.003;
+      limiter.release.value = 0.15;
+
+      masterGain.connect(limiter);
+      limiter.connect(audioCtx.destination);
 
       try {
         customSourceNode = audioCtx.createMediaElementSource(customAudioEl);
@@ -2977,7 +2985,7 @@
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
       masterGain.gain.setTargetAtTime(audioSettings.master, now, 0.03);
-      lofiBus.gain.setTargetAtTime(isLofiActive() ? 1.0 : 0.0, now, 0.05);
+      lofiBus.gain.setTargetAtTime(isLofiActive() ? 3.2 : 0.0, now, 0.05);
       customTrackGain.gain.setTargetAtTime(audioSettings.audioSource === 'custom' ? 0.95 : 0.0, now, 0.05);
       chordGain.gain.setTargetAtTime(audioSettings.chords * 0.32, now, 0.03);
       drumGain.gain.setTargetAtTime(audioSettings.drums * 0.55, now, 0.03);
