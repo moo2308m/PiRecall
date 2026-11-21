@@ -1,12 +1,12 @@
 # PiRecall
 
-A lightweight, self-contained Pi memorization tool that runs entirely in a single HTML file. I originally built this for myself to push my own digit memory further, and decided to make it public in case anyone else wants a clean, customizable place to practice.
+A lightweight, self-contained Pi memorization tool that runs entirely in a single HTML file. I originally built this for myself to push my own digit memory, and decided to make it public because why not? If I have a good tool, everyone else should have access to it.
 
 **Try it yourself:** [moo2308m.github.io/PiRecall](https://github.io)
 
 ---
 
-## How to Play
+## Instructions
 
 ### Normal Runs & Stats
 1. **Start Typing:** Click the input box and type the digits of Pi starting after `3.` (`14159...`). Your timer and typing speed (**WPM**) start automatically as soon as you enter the first digit.
@@ -30,11 +30,11 @@ The background and audio engine aren't just static decorations—they respond di
 - **Typing & Milestone Pulses:** Every digit you type triggers subtle key chimes and micro-sparks, while hitting chunks, unlocking milestones, or beating your personal best sends shockwaves, particle bursts, and color-reactive pulses across the shader waves.
 - **Built-In Procedural Lo-Fi Synth:** Generates endless lo-fi tracks on the fly using the Web Audio API (no MP3s or internet connection required). Every beat is synthesized live with warm electric-piano chords, dusty drum loops, sub-bass, and vinyl crackle—and hitting **New Beat** generates a fresh chord progression and tempo.
 - **Real-Time Audio-Reactive Shaders:** With **Wave Sync** turned on, the shader analyzes the live audio output so the waves pulse, swell, and shift brightness in time with the kick drums and chords—whether you're listening to the built-in synth or your own imported songs.
-- **Offline Device Audio Support:** Import your own `MP3`, `WAV`, `OGG`, or `M4A` tracks from your device to play inside the app. Imported tracks are stored locally in your browser so they stay available offline, complete with a **Loop** toggle and one-click switching back to the built-in lo-fi synth.
+- **Offline Device Audio Support:** Import your own `MP3`, `WAV`, `OGG`, or `M4A` tracks from your device to play inside the website. Imported tracks are stored locally in your browser so they stay available offline, complete with a **Loop** toggle and one-click switching back to the built-in lo-fi synth.
 
 ---
 
-## Full Settings Breakdown
+## Settings
 
 Click **Settings** in the top-right corner of the card to open the control panel:
 
