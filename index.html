@@ -1345,7 +1345,10 @@
       position: fixed;
       z-index: 80;
       width: min(410px, calc(100vw - 24px));
+      max-width: calc(100vw - 16px);
       max-height: calc(100vh - 24px);
+      min-width: 300px;
+      min-height: 240px;
       display: none;
       flex-direction: column;
       background: rgba(15, 23, 42, min(0.95, calc(var(--glass-opacity) + 0.12)));
@@ -1411,10 +1414,39 @@
 
     .floating-window-body {
       padding: 0.9rem 0.95rem;
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 0.82rem;
+    }
+
+    .floating-window > .resize-e {
+      top: 40px;
+      right: 0;
+      width: 8px;
+    }
+
+    .floating-window > .resize-w {
+      top: 40px;
+      left: 0;
+      width: 8px;
+    }
+
+    .floating-window > .resize-s {
+      bottom: 0;
+      height: 8px;
+    }
+
+    .floating-window > .resize-se {
+      right: 0;
+      bottom: 0;
+    }
+
+    .floating-window > .resize-sw {
+      left: 0;
+      bottom: 0;
     }
 
     .dual-range-wrap {
@@ -1726,7 +1758,7 @@
   <div class="resize-handle resize-sw" data-resize="sw" title="Drag to resize"></div>
     <header>
       <div class="title-group">
-        <h1>π Recall</h1>
+        <h1>PiRecall</h1>
         <span class="mode-badge practice" id="practiceBadge">Practice</span>
         <span class="mode-badge" id="drillBadge">Drill #1</span>
       </div>
@@ -2736,6 +2768,11 @@
 
   <!-- Draggable Per-Song Settings Window -->
   <div class="floating-window" id="songSettingsModal" role="dialog" aria-modal="false">
+    <div class="resize-handle resize-e" data-resize="e" title="Drag to resize width"></div>
+     <div class="resize-handle resize-w" data-resize="w" title="Drag to resize width"></div>
+     <div class="resize-handle resize-s" data-resize="s" title="Drag to resize height"></div>
+     <div class="resize-handle resize-se" data-resize="se" title="Drag to resize"></div>
+     <div class="resize-handle resize-sw" data-resize="sw" title="Drag to resize"></div>
     <div class="floating-window-header" id="songModalHeader">
       <span class="floating-window-title" id="songModalTitle">Track Settings</span>
       <button class="floating-close-btn" id="songModalCloseBtn" title="Close (Esc)">&times;</button>
@@ -6831,6 +6868,77 @@
         songSettingsModal.style.top = nextT + 'px';
       });
       window.addEventListener('pointerup', function() { dragging = false; });
+    })();
+
+    (function setupSongModalResize() {
+      let activeDir = null;
+      let startX = 0;
+      let startY = 0;
+      let origLeft = 0;
+      let origTop = 0;
+      let origW = 410;
+      let origH = 340;
+
+      songSettingsModal.querySelectorAll('.resize-handle').forEach(function(handle) {
+        handle.addEventListener('pointerdown', function(e) {
+          if (e.button !== 0) return;
+          e.preventDefault();
+          e.stopPropagation();
+
+          const rect = songSettingsModal.getBoundingClientRect();
+          activeDir = handle.dataset.resize;
+          startX = e.clientX;
+          startY = e.clientY;
+          origLeft = rect.left;
+          origTop = rect.top;
+          origW = rect.width;
+          origH = rect.height;
+
+          songSettingsModal.style.left = origLeft + 'px';
+          songSettingsModal.style.top = origTop + 'px';
+          document.body.style.cursor = getComputedStyle(handle).cursor;
+        });
+
+        handle.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          songSettingsModal.style.width = '';
+          songSettingsModal.style.height = '';
+          clampModalToViewport();
+        });
+      });
+
+      window.addEventListener('pointermove', function(e) {
+        if (!activeDir) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const minW = 300;
+        const minH = 240;
+
+        if (activeDir.indexOf('e') !== -1) {
+          const maxW = Math.max(minW, window.innerWidth - origLeft - 8);
+          songSettingsModal.style.width = Math.round(clampNum(origW + dx, minW, maxW, origW)) + 'px';
+        } else if (activeDir.indexOf('w') !== -1) {
+          const maxLeft = origLeft + origW - minW;
+          const newLeft = Math.round(clampNum(origLeft + dx, 8, maxLeft, origLeft));
+          const newW = (origLeft + origW) - newLeft;
+          songSettingsModal.style.left = newLeft + 'px';
+          songSettingsModal.style.width = Math.round(newW) + 'px';
+        }
+
+        if (activeDir.indexOf('s') !== -1) {
+          const maxH = Math.max(minH, window.innerHeight - origTop - 8);
+          songSettingsModal.style.height = Math.round(clampNum(origH + dy, minH, maxH, origH)) + 'px';
+        }
+      });
+
+      function endModalResize() {
+        if (!activeDir) return;
+        activeDir = null;
+        document.body.style.cursor = '';
+      }
+
+      window.addEventListener('pointerup', endModalResize);
+      window.addEventListener('pointercancel', endModalResize);
     })();
 
     function commitSongConfigChange(preSnap, label) {
