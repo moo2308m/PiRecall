@@ -2769,10 +2769,10 @@
   <!-- Draggable Per-Song Settings Window -->
   <div class="floating-window" id="songSettingsModal" role="dialog" aria-modal="false">
     <div class="resize-handle resize-e" data-resize="e" title="Drag to resize width"></div>
-     <div class="resize-handle resize-w" data-resize="w" title="Drag to resize width"></div>
-     <div class="resize-handle resize-s" data-resize="s" title="Drag to resize height"></div>
-     <div class="resize-handle resize-se" data-resize="se" title="Drag to resize"></div>
-     <div class="resize-handle resize-sw" data-resize="sw" title="Drag to resize"></div>
+    <div class="resize-handle resize-w" data-resize="w" title="Drag to resize width"></div>
+    <div class="resize-handle resize-s" data-resize="s" title="Drag to resize height"></div>
+    <div class="resize-handle resize-se" data-resize="se" title="Drag to resize"></div>
+    <div class="resize-handle resize-sw" data-resize="sw" title="Drag to resize"></div>
     <div class="floating-window-header" id="songModalHeader">
       <span class="floating-window-title" id="songModalTitle">Track Settings</span>
       <button class="floating-close-btn" id="songModalCloseBtn" title="Close (Esc)">&times;</button>
@@ -2836,6 +2836,34 @@
         <input type="range" id="songSpeedRange" min="0.25" max="2.5" step="0.05" value="1.00" />
       </div>
 
+      <div class="slider-row">
+        <div class="slider-label">
+          <span class="inline-row">
+            <button class="btn-mini xs off" id="songFadeInBtn">Fade In: Off</button>
+            <span>Duration</span>
+          </span>
+          <span class="slider-num-wrap" id="songFadeInNumWrap">
+            <input type="number" class="slider-num-input" id="songFadeInNum" min="0.1" max="60" step="0.1" value="2.0" />
+            <span class="slider-unit">s</span>
+          </span>
+        </div>
+        <input type="range" id="songFadeInRange" min="0.1" max="60" step="0.1" value="2.0" />
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-label">
+          <span class="inline-row">
+            <button class="btn-mini xs off" id="songFadeOutBtn">Fade Out: Off</button>
+            <span>Duration</span>
+          </span>
+          <span class="slider-num-wrap" id="songFadeOutNumWrap">
+            <input type="number" class="slider-num-input" id="songFadeOutNum" min="0.1" max="60" step="0.1" value="2.0" />
+            <span class="slider-unit">s</span>
+          </span>
+        </div>
+        <input type="range" id="songFadeOutRange" min="0.1" max="60" step="0.1" value="2.0" />
+      </div>
+
       <div class="inline-row" style="justify-content: space-between; padding-top: 0.25rem; border-top: 1px solid rgba(51, 65, 85, 0.5);">
         <button class="btn-mini off" id="songPreserveTempoBtn" title="Off: Tape varispeed (pitch & speed linked). On: Independent key shift & tempo.">Independent Pitch &amp; Tempo: Off</button>
         <button class="btn-mini" id="songResetTrackBtn">Reset Track</button>
@@ -2843,7 +2871,6 @@
     </div>
   </div>
 
-  <!-- Unified Custom Multi-Space Color Picker (RGB, RYB, CMYK, HSV — Strictly No Alpha) -->
   <div class="color-picker-popover" id="colorPickerPopover" role="dialog" aria-modal="false">
     <div class="cp-header">
       <span id="cpTitle">Pick Color</span>
@@ -2916,7 +2943,9 @@
       { id: 'showNextFive', label: 'Show Next 5 Digits', defaultBind: 'KeyN' },
       { id: 'playPauseMusic', label: 'Play / Pause Music', defaultBind: 'KeyM' },
       { id: 'nextTrack', label: 'Next Imported Track', defaultBind: 'BracketRight' },
-      { id: 'triggerBurst', label: 'Trigger Test Wave Burst', defaultBind: 'KeyB' }
+      { id: 'triggerBurst', label: 'Trigger Test Wave Burst', defaultBind: 'KeyB' },
+      { id: 'undo', label: 'Undo', defaultBind: 'Ctrl+KeyZ' },
+      { id: 'redo', label: 'Redo', defaultBind: 'Ctrl+KeyY' }
     ];
 
     function normalizeHex(hex, fallback) {
@@ -2959,7 +2988,11 @@
         volume: 100,
         semitones: 0,
         speed: 1.0,
-        preserveTempo: false
+        preserveTempo: false,
+        fadeInEnabled: false,
+        fadeInSec: 2.0,
+        fadeOutEnabled: false,
+        fadeOutSec: 2.0
       };
     }
 
@@ -2975,6 +3008,10 @@
       def.semitones = Math.round(clampNum(raw.semitones, -12, 12, 0));
       def.speed = Math.round(clampNum(raw.speed, 0.25, 2.5, 1.0) * 100) / 100;
       def.preserveTempo = Boolean(raw.preserveTempo);
+      def.fadeInEnabled = Boolean(raw.fadeInEnabled);
+      def.fadeInSec = Math.round(clampNum(raw.fadeInSec, 0.1, 60, 2.0) * 10) / 10;
+      def.fadeOutEnabled = Boolean(raw.fadeOutEnabled);
+      def.fadeOutSec = Math.round(clampNum(raw.fadeOutSec, 0.1, 60, 2.0) * 10) / 10;
       return def;
     }
 
@@ -4789,7 +4826,7 @@
     }
 
     // --- Procedural Lo-Fi + Custom Audio + Real-Time Web Audio Pitch Shifter ---
-    let masterGain, musicMixGain, lofiBus, customTrackGain, chordGain, drumGain, crackleGain, sfxGain, tapeFilter;
+    let masterGain, musicMixGain, lofiBus, customTrackGain, trackFadeGain, chordGain, drumGain, crackleGain, sfxGain, tapeFilter;
     let customSourceNode = null;
     let pitchDryGain = null;
     let pitchWetGain = null;
@@ -4999,6 +5036,7 @@
       musicMixGain = audioCtx.createGain();
       lofiBus = audioCtx.createGain();
       customTrackGain = audioCtx.createGain();
+      trackFadeGain = audioCtx.createGain();
       pitchDryGain = audioCtx.createGain();
       pitchWetGain = audioCtx.createGain();
       chordGain = audioCtx.createGain();
@@ -5023,7 +5061,8 @@
       lofiBus.connect(musicMixGain);
       pitchDryGain.connect(customTrackGain);
       pitchWetGain.connect(customTrackGain);
-      customTrackGain.connect(musicMixGain);
+      customTrackGain.connect(trackFadeGain);
+      trackFadeGain.connect(musicMixGain);
 
       musicMixGain.connect(musicAnalyser);
       musicMixGain.connect(masterGain);
@@ -5085,47 +5124,158 @@
       return audioSettings.lofiEnabled && audioSettings.audioSource === 'lofi';
     }
 
-    function applyActiveTrackAudioProps() {
-      const cfg = audioSettings.audioSource === 'custom' && audioSettings.activeTrackId
-        ? getTrackConfig(audioSettings.activeTrackId)
-        : createDefaultTrackConfig();
+    let trimBoundaryTimer = null;
 
-      const trackVolMult = cfg.volume / 100;
-      const semi = cfg.semitones;
-      const speed = cfg.speed;
+ function clearTrimBoundaryTimer() {
+   if (trimBoundaryTimer) {
+     clearTimeout(trimBoundaryTimer);
+     trimBoundaryTimer = null;
+   }
+ }
 
-      if (cfg.preserveTempo) {
-        customAudioEl.preservesPitch = true;
-        if ('mozPreservesPitch' in customAudioEl) customAudioEl.mozPreservesPitch = true;
-        if ('webkitPreservesPitch' in customAudioEl) customAudioEl.webkitPreservesPitch = true;
-        customAudioEl.playbackRate = clampNum(speed, 0.25, 2.5, 1.0);
-      } else {
-        customAudioEl.preservesPitch = false;
-        if ('mozPreservesPitch' in customAudioEl) customAudioEl.mozPreservesPitch = false;
-        if ('webkitPreservesPitch' in customAudioEl) customAudioEl.webkitPreservesPitch = false;
-        const combinedRate = speed * Math.pow(2.0, semi / 12.0);
-        customAudioEl.playbackRate = clampNum(combinedRate, 0.25, 4.0, 1.0);
-      }
+ function getEffectiveTrackEndSec(trackId, cfg) {
+   const start = cfg.startTime || 0;
+   if (cfg.endTime !== null && cfg.endTime > start + 0.15) return cfg.endTime;
+   const track = importedTracks.find(function(t) { return t.id === trackId; });
+   const dur = Number.isFinite(customAudioEl.duration) && customAudioEl.duration > 0
+     ? customAudioEl.duration
+     : (track && track.duration ? track.duration : null);
+   return (dur && dur > start + 0.15) ? dur : null;
+ }
 
-      if (audioCtx) {
-        const now = audioCtx.currentTime;
-        customTrackGain.gain.setTargetAtTime(
-          audioSettings.audioSource === 'custom' ? 0.95 * trackVolMult : 0.0,
-          now,
-          0.03
-        );
-        const useWetShifter = cfg.preserveTempo && semi !== 0;
-        if (pitchDryGain && pitchWetGain) {
-          pitchDryGain.gain.setTargetAtTime(useWetShifter ? 0.0 : 1.0, now, 0.02);
-          pitchWetGain.gain.setTargetAtTime(useWetShifter ? 1.0 : 0.0, now, 0.02);
-        }
-        if (pitchShifterController) {
-          pitchShifterController.setPitchRatio(useWetShifter ? semi : 0);
-        }
-      }
-    }
+ function computeFadeGainAt(t, cfg, end) {
+   const start = cfg.startTime || 0;
+   const fadeIn = cfg.fadeInEnabled ? Math.max(0.05, cfg.fadeInSec) : 0;
+   const fadeOut = (cfg.fadeOutEnabled && end !== null) ? Math.max(0.05, cfg.fadeOutSec) : 0;
+   const gIn = fadeIn > 0 ? clampNum((t - start) / fadeIn, 0, 1, 1) : 1;
+   const gOut = fadeOut > 0 ? clampNum((end - t) / fadeOut, 0, 1, 1) : 1;
+   return Math.min(gIn, gOut);
+ }
 
-    function applyAudioSettings() {
+ function scheduleTrackFadeEnvelope(assumePlaying) {
+   if (!audioCtx || !trackFadeGain) return;
+   const now = audioCtx.currentTime;
+   const g = trackFadeGain.gain;
+   g.cancelScheduledValues(now);
+
+   if (audioSettings.audioSource !== 'custom' || !audioSettings.activeTrackId || (customAudioEl.paused && !assumePlaying)) {
+     g.setValueAtTime(1.0, now);
+     return;
+   }
+
+   const cfg = getTrackConfig(audioSettings.activeTrackId);
+   const start = cfg.startTime || 0;
+   const end = getEffectiveTrackEndSec(audioSettings.activeTrackId, cfg);
+   const fadeIn = cfg.fadeInEnabled ? Math.max(0.05, cfg.fadeInSec) : 0;
+   const fadeOut = (cfg.fadeOutEnabled && end !== null) ? Math.max(0.05, cfg.fadeOutSec) : 0;
+
+   if (fadeIn === 0 && fadeOut === 0) {
+     g.setTargetAtTime(1.0, now, 0.02);
+     return;
+   }
+
+   const rate = Math.max(0.1, customAudioEl.playbackRate || 1.0);
+   const t = Math.max(start, customAudioEl.currentTime || start);
+   const curGain = computeFadeGainAt(t, cfg, end);
+   g.setValueAtTime(curGain, now);
+
+   const fadeInEnd = start + fadeIn;
+   const fadeOutStart = end !== null ? Math.max(start, end - fadeOut) : Infinity;
+
+   if (fadeIn > 0 && fadeOut > 0 && end !== null && fadeInEnd > fadeOutStart) {
+     const tMid = (start * fadeOut + end * fadeIn) / (fadeIn + fadeOut);
+     const peak = clampNum((tMid - start) / fadeIn, 0, 1, 1);
+     if (t < tMid) {
+       g.linearRampToValueAtTime(peak, now + (tMid - t) / rate);
+     }
+     if (t < end) {
+       g.linearRampToValueAtTime(0.0, now + Math.max(0.01, (end - t) / rate));
+     }
+   } else {
+     if (fadeIn > 0 && t < fadeInEnd) {
+       g.linearRampToValueAtTime(1.0, now + (fadeInEnd - t) / rate);
+     } else if (fadeOut === 0 || t < fadeOutStart) {
+       g.linearRampToValueAtTime(1.0, now + 0.015);
+     }
+
+     if (fadeOut > 0 && end !== null) {
+       if (t < fadeOutStart) {
+         g.setValueAtTime(1.0, now + (fadeOutStart - t) / rate);
+       }
+       if (t < end) {
+         g.linearRampToValueAtTime(0.0, now + Math.max(0.01, (end - t) / rate));
+       }
+     }
+   }
+ }
+
+ function scheduleTrimBoundaryTimer() {
+   clearTrimBoundaryTimer();
+   if (audioSettings.audioSource !== 'custom' || !audioSettings.activeTrackId || customAudioEl.paused) return;
+   const cfg = getTrackConfig(audioSettings.activeTrackId);
+   const start = cfg.startTime || 0;
+   const end = cfg.endTime;
+   if (end === null || end <= start + 0.15) return;
+
+   const rate = Math.max(0.1, customAudioEl.playbackRate || 1.0);
+   const remainingAudioSec = end - customAudioEl.currentTime;
+   const delayMs = remainingAudioSec <= 0.025
+     ? 0
+     : Math.max(20, Math.ceil((remainingAudioSec / rate) * 1000));
+
+   trimBoundaryTimer = setTimeout(function() {
+     trimBoundaryTimer = null;
+     enforceActiveTrackBounds();
+   }, delayMs);
+ }
+
+ function applyActiveTrackAudioProps() {
+   const cfg = audioSettings.audioSource === 'custom' && audioSettings.activeTrackId
+     ? getTrackConfig(audioSettings.activeTrackId)
+     : createDefaultTrackConfig();
+
+   const trackVolMult = cfg.volume / 100;
+   const semi = cfg.semitones;
+   const speed = cfg.speed;
+
+   if (cfg.preserveTempo) {
+     customAudioEl.preservesPitch = true;
+     if ('mozPreservesPitch' in customAudioEl) customAudioEl.mozPreservesPitch = true;
+     if ('webkitPreservesPitch' in customAudioEl) customAudioEl.webkitPreservesPitch = true;
+     customAudioEl.playbackRate = clampNum(speed, 0.25, 2.5, 1.0);
+   } else {
+     customAudioEl.preservesPitch = false;
+     if ('mozPreservesPitch' in customAudioEl) customAudioEl.mozPreservesPitch = false;
+     if ('webkitPreservesPitch' in customAudioEl) customAudioEl.webkitPreservesPitch = false;
+     const combinedRate = speed * Math.pow(2.0, semi / 12.0);
+     customAudioEl.playbackRate = clampNum(combinedRate, 0.25, 4.0, 1.0);
+   }
+
+   if (audioSettings.audioSource === 'custom') {
+     customAudioEl.loop = audioSettings.customLoop && cfg.endTime === null;
+     scheduleTrimBoundaryTimer();
+     scheduleTrackFadeEnvelope(false);
+   }
+
+   if (audioCtx) {
+     const now = audioCtx.currentTime;
+     customTrackGain.gain.setTargetAtTime(
+       audioSettings.audioSource === 'custom' ? 0.95 * trackVolMult : 0.0,
+       now,
+       0.03
+     );
+     const useWetShifter = cfg.preserveTempo && semi !== 0;
+     if (pitchDryGain && pitchWetGain) {
+       pitchDryGain.gain.setTargetAtTime(useWetShifter ? 0.0 : 1.0, now, 0.02);
+       pitchWetGain.gain.setTargetAtTime(useWetShifter ? 1.0 : 0.0, now, 0.02);
+     }
+     if (pitchShifterController) {
+       pitchShifterController.setPitchRatio(useWetShifter ? semi : 0);
+     }
+   }
+ }
+
+ function applyAudioSettings() {
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
       masterGain.gain.setTargetAtTime(audioSettings.master, now, 0.03);
@@ -5138,31 +5288,42 @@
       applyActiveTrackAudioProps();
     }
 
-    function enforceActiveTrackBounds() {
-      if (audioSettings.audioSource !== 'custom' || !audioSettings.activeTrackId) return;
-      const cfg = getTrackConfig(audioSettings.activeTrackId);
-      const start = cfg.startTime || 0;
-      const end = cfg.endTime;
-      if (customAudioEl.readyState >= 1 && customAudioEl.currentTime < start - 0.08) {
-        customAudioEl.currentTime = start;
-      }
-      if (end !== null && end > start + 0.15 && customAudioEl.currentTime >= end) {
-        if (audioSettings.customLoop) {
-          customAudioEl.currentTime = start;
-          if (customAudioEl.paused && !customAudioPausedByUser) {
-            customAudioEl.play().catch(function() {});
-          }
-        } else if (importedTracks.length > 1) {
-          advanceToNextTrack();
-        } else {
-          customAudioEl.pause();
-          customAudioEl.currentTime = start;
-          customAudioPausedByUser = true;
-          renderTrackList();
-          syncSoundUI();
-        }
-      }
-    }
+ function enforceActiveTrackBounds() {
+   if (audioSettings.audioSource !== 'custom' || !audioSettings.activeTrackId) return;
+   const cfg = getTrackConfig(audioSettings.activeTrackId);
+   const start = cfg.startTime || 0;
+   const end = cfg.endTime;
+   if (customAudioEl.readyState >= 1 && customAudioEl.currentTime < start - 0.08) {
+     customAudioEl.currentTime = start;
+   }
+   if (end !== null && end > start + 0.15 && customAudioEl.currentTime >= end - 0.025) {
+     if (audioSettings.customLoop) {
+       customAudioEl.currentTime = start;
+       if (customAudioEl.paused && !customAudioPausedByUser) {
+         customAudioEl.play().catch(function() {});
+       }
+       scheduleTrimBoundaryTimer();
+       scheduleTrackFadeEnvelope(true);
+     } else if (importedTracks.length > 1) {
+       advanceToNextTrack();
+     } else {
+       clearTrimBoundaryTimer();
+       customAudioEl.pause();
+       customAudioEl.currentTime = start;
+       customAudioPausedByUser = true;
+       scheduleTrackFadeEnvelope(false);
+       renderTrackList();
+       syncSoundUI();
+     }
+   }
+ }
+
+ customAudioEl.addEventListener('timeupdate', enforceActiveTrackBounds);
+ customAudioEl.addEventListener('play', function() { scheduleTrimBoundaryTimer(); scheduleTrackFadeEnvelope(true); });
+ customAudioEl.addEventListener('pause', function() { clearTrimBoundaryTimer(); scheduleTrackFadeEnvelope(false); });
+ customAudioEl.addEventListener('seeked', function() { scheduleTrimBoundaryTimer(); scheduleTrackFadeEnvelope(false); });
+ customAudioEl.addEventListener('ratechange', function() { scheduleTrimBoundaryTimer(); scheduleTrackFadeEnvelope(false); });
+ customAudioEl.addEventListener('loadedmetadata', function() { scheduleTrackFadeEnvelope(false); });
 
     function triggerChord(notes, time, dur) {
       if (!audioCtx || !isLofiActive()) return;
@@ -5442,6 +5603,7 @@
         }
         applyActiveTrackAudioProps();
         customAudioEl.loop = audioSettings.customLoop && cfg.endTime === null;
+        scheduleTrackFadeEnvelope(true);
         customAudioEl.play().catch(function() {});
         renderTrackList();
         syncSoundUI();
@@ -5607,6 +5769,14 @@
     const songSpeedNum = document.getElementById('songSpeedNum');
     const songPreserveTempoBtn = document.getElementById('songPreserveTempoBtn');
     const songResetTrackBtn = document.getElementById('songResetTrackBtn');
+    const songFadeInBtn = document.getElementById('songFadeInBtn');
+    const songFadeInRange = document.getElementById('songFadeInRange');
+    const songFadeInNum = document.getElementById('songFadeInNum');
+    const songFadeInNumWrap = document.getElementById('songFadeInNumWrap');
+    const songFadeOutBtn = document.getElementById('songFadeOutBtn');
+    const songFadeOutRange = document.getElementById('songFadeOutRange');
+    const songFadeOutNum = document.getElementById('songFadeOutNum');
+    const songFadeOutNumWrap = document.getElementById('songFadeOutNumWrap');
 
     const subSections = Array.from(document.querySelectorAll('.sub-section[data-section]'));
 
@@ -6695,7 +6865,7 @@
         nameSpan.title = track.name;
         row.appendChild(nameSpan);
 
-        if (cfg.semitones !== 0 || cfg.speed !== 1 || cfg.startTime > 0 || cfg.endTime !== null || cfg.volume !== 100) {
+        if (cfg.semitones !== 0 || cfg.speed !== 1 || cfg.startTime > 0 || cfg.endTime !== null || cfg.volume !== 100 || cfg.fadeInEnabled || cfg.fadeOutEnabled) {
           const badge = document.createElement('span');
           badge.className = 'track-badge';
           const parts = [];
@@ -6703,6 +6873,7 @@
           if (cfg.speed !== 1) parts.push(cfg.speed.toFixed(2) + 'x');
           if (cfg.volume !== 100) parts.push(cfg.volume + '%');
           if (cfg.startTime > 0 || cfg.endTime !== null) parts.push('Trim');
+          if (cfg.fadeInEnabled || cfg.fadeOutEnabled) parts.push('Fade');
           badge.textContent = parts.join(' ');
           row.appendChild(badge);
         }
@@ -6817,6 +6988,22 @@
 
       songPreserveTempoBtn.textContent = 'Independent Pitch & Tempo: ' + (cfg.preserveTempo ? 'On' : 'Off');
       songPreserveTempoBtn.className = 'btn-mini ' + (cfg.preserveTempo ? 'on' : 'off');
+
+      songFadeInBtn.textContent = 'Fade In: ' + (cfg.fadeInEnabled ? 'On' : 'Off');
+      songFadeInBtn.className = 'btn-mini xs ' + (cfg.fadeInEnabled ? 'on' : 'off');
+      songFadeInRange.value = cfg.fadeInSec;
+      songFadeInRange.disabled = !cfg.fadeInEnabled;
+      songFadeInNum.disabled = !cfg.fadeInEnabled;
+      songFadeInNumWrap.classList.toggle('disabled-ctrl', !cfg.fadeInEnabled);
+      if (document.activeElement !== songFadeInNum) songFadeInNum.value = cfg.fadeInSec.toFixed(1);
+
+      songFadeOutBtn.textContent = 'Fade Out: ' + (cfg.fadeOutEnabled ? 'On' : 'Off');
+      songFadeOutBtn.className = 'btn-mini xs ' + (cfg.fadeOutEnabled ? 'on' : 'off');
+      songFadeOutRange.value = cfg.fadeOutSec;
+      songFadeOutRange.disabled = !cfg.fadeOutEnabled;
+      songFadeOutNum.disabled = !cfg.fadeOutEnabled;
+      songFadeOutNumWrap.classList.toggle('disabled-ctrl', !cfg.fadeOutEnabled);
+      if (document.activeElement !== songFadeOutNum) songFadeOutNum.value = cfg.fadeOutSec.toFixed(1);
     }
 
     function openSongSettingsModal(track) {
@@ -7062,6 +7249,24 @@
       syncSongModalUI();
       commitSongConfigChange(snap, 'Track Independent Pitch & Tempo');
     });
+
+    songFadeInBtn.addEventListener('click', function() {
+      if (!openSongModalTrackId) return;
+      const snap = snapshotAllSettings();
+      const cfg = getTrackConfig(openSongModalTrackId);
+      cfg.fadeInEnabled = !cfg.fadeInEnabled;
+      syncSongModalUI();
+      commitSongConfigChange(snap, 'Track Fade In');
+    });
+
+   songFadeOutBtn.addEventListener('click', function() {
+      if (!openSongModalTrackId) return;
+      const snap = snapshotAllSettings();
+      const cfg = getTrackConfig(openSongModalTrackId);
+      cfg.fadeOutEnabled = !cfg.fadeOutEnabled;
+      syncSongModalUI();
+      commitSongConfigChange(snap, 'Track Fade Out');
+   });
 
     songResetTrackBtn.addEventListener('click', function() {
       if (!openSongModalTrackId) return;
@@ -7466,6 +7671,31 @@
         scheduleSaveState();
       }
     });
+
+    bindTypableSlider({
+   rangeId: 'songFadeInRange', numId: 'songFadeInNum', min: 0.1, max: 60, decimals: 1, label: 'Track Fade In Duration',
+   getCurrent: function() { return openSongModalTrackId ? getTrackConfig(openSongModalTrackId).fadeInSec : 2.0; },
+   onApply: function(v) {
+     if (!openSongModalTrackId) return;
+     getTrackConfig(openSongModalTrackId).fadeInSec = v;
+     applyActiveTrackAudioProps();
+     persistTrackConfigToDB(openSongModalTrackId);
+     renderTrackList();
+     scheduleSaveState();
+   }
+ });
+    bindTypableSlider({
+   rangeId: 'songFadeOutRange', numId: 'songFadeOutNum', min: 0.1, max: 60, decimals: 1, label: 'Track Fade Out Duration',
+   getCurrent: function() { return openSongModalTrackId ? getTrackConfig(openSongModalTrackId).fadeOutSec : 2.0; },
+   onApply: function(v) {
+     if (!openSongModalTrackId) return;
+     getTrackConfig(openSongModalTrackId).fadeOutSec = v;
+     applyActiveTrackAudioProps();
+     persistTrackConfigToDB(openSongModalTrackId);
+     renderTrackList();
+     scheduleSaveState();
+      }
+   });
 
     // Bind Master Intensity & Individual FX Sliders
     bindTypableSlider({
@@ -8060,6 +8290,10 @@
         else { initAudio(); randomizeVibe(); }
       } else if (actionId === 'triggerBurst') {
         if (gameSettings.waves.enabled) triggerCenterVolumeBurst(1.15);
+      } else if (actionId === 'undo') {
+        performUndo();
+      } else if (actionId === 'redo') {
+        performRedo();
       }
     }
 
@@ -8987,40 +9221,45 @@
         }
       }
 
-      const keyLower = e.key.toLowerCase();
+      const pressedCombo = buildKeybindStringFromEvent(e);
+      const activeEl = document.activeElement;
+      const inSettingsTextInput = activeEl && activeEl !== digitInput && (
+        activeEl.tagName === 'INPUT' && activeEl.type !== 'range' && activeEl.type !== 'button' && activeEl.type !== 'checkbox'
+      );
+      const hasModifier = e.ctrlKey || e.metaKey || e.altKey;
 
-      // 3. Unified Ctrl+Z / Cmd+Z (Undo) and Ctrl+Y / Cmd+Shift+Z (Redo)
-      if ((e.ctrlKey || e.metaKey) && !e.altKey) {
-        if (keyLower === 'z') {
-          if (document.activeElement === startAtInput && Number(startAtInput.value) !== gameSettings.startAt) {
+      // 3. Undo / Redo Keybinds (allowed in inputs when using Ctrl/Cmd/Alt, except unsubmitted startAtInput)
+      if (pressedCombo) {
+        if (pressedCombo === gameSettings.keybinds.undo && (!inSettingsTextInput || hasModifier)) {
+          if (activeEl === startAtInput && Number(startAtInput.value) !== gameSettings.startAt) {
             return;
           }
           e.preventDefault();
-          if (e.shiftKey) performRedo();
-          else performUndo();
+          performUndo();
           return;
         }
-        if (keyLower === 'y') {
+        const useShiftZRedo = gameSettings.keybinds.redo === 'Ctrl+KeyY' &&
+          !Object.keys(gameSettings.keybinds).some(function(k) { return gameSettings.keybinds[k] === 'Ctrl+Shift+KeyZ'; });
+        if (
+          (pressedCombo === gameSettings.keybinds.redo || (useShiftZRedo && pressedCombo === 'Ctrl+Shift+KeyZ')) &&
+          (!inSettingsTextInput || hasModifier)
+        ) {
           e.preventDefault();
           performRedo();
           return;
         }
       }
 
-      // Skip custom keybinds if user is actively typing inside a non-game input field
-      const activeEl = document.activeElement;
-      const inSettingsTextInput = activeEl && activeEl !== digitInput && (
-        activeEl.tagName === 'INPUT' && activeEl.type !== 'range' && activeEl.type !== 'button' && activeEl.type !== 'checkbox'
-      );
+      // Skip remaining custom keybinds while typing inside a non-game input field
       if (inSettingsTextInput) {
         return;
       }
 
-      // 4. Match Custom Keybinds
-      const pressedCombo = buildKeybindStringFromEvent(e);
+      // 4. Match Remaining Custom Keybinds
       if (pressedCombo) {
         for (let i = 0; i < KEYBIND_DEFS.length; i++) {
           const def = KEYBIND_DEFS[i];
+          if (def.id === 'undo' || def.id === 'redo') continue;
           if (gameSettings.keybinds[def.id] === pressedCombo) {
             e.preventDefault();
             executeKeybindAction(def.id);
@@ -9033,7 +9272,7 @@
         e.preventDefault();
         initGame();
       }
-    });
+  });
 
     restoreOrInitGame();
   </script>
